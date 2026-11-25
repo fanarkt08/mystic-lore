@@ -5,7 +5,7 @@ x-service: &service
   restart: unless-stopped
   env_file: [.env]
   environment: &env
-    RELEASE_DISTRIBUTION: name
+    RELEASE_DISTRIBUTION: sname   # noms courts : Docker donne des noms de machine sans domaine (web, social…)
     RELEASE_COOKIE: ${ERL_COOKIE:-mysticlore-compose-cookie}
     CLUSTER_NODES: web@web,accounts@accounts,learning@learning,billing@billing,social@social,multiplayer@multiplayer,community@community,studio@studio,notifications@notifications
     ACCOUNTS_URL: http://accounts:4001
