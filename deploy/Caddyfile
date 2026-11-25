@@ -3,3 +3,8 @@
 	encode zstd gzip
 	reverse_proxy web:4000
 }
+
+# Première adresse du site, gardée pour les liens déjà partagés : redirection permanente.
+2-29-144-219.sslip.io {
+	redir https://{$PHX_HOST}{uri} permanent
+}
