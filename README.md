@@ -96,6 +96,11 @@ docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --b
 Caddy ([deploy/Caddyfile](deploy/Caddyfile)) fournit le HTTPS, et seuls les ports 80 et 443 sont publiés.
 [src/Dockerfile](src/Dockerfile) est un build multi-étapes paramétré par `SERVICE`.
 
+Au premier démarrage, [deploy/seed-demo.sh](deploy/seed-demo.sh) crée les données de démo. Ensuite, chaque push sur
+`main` dont la CI passe est déployé par [deploy.yml](.github/workflows/deploy.yml) : le serveur récupère le commit et
+lance [deploy/deploy.sh](deploy/deploy.sh), qui reconstruit les images une par une, redémarre et vérifie le site. Le
+serveur a 4 Go de mémoire, et deux compilations en parallèle ne tiennent pas.
+
 ## Limites connues
 
 - Les pages juridiques sont provisoires et doivent être validées par un juriste avant une vraie mise en production.

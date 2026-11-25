@@ -22,3 +22,6 @@ src/learning/native/sim_engine/target/
 .DS_Store
 # captures produites par les scripts e2e
 e2e/*.png
+
+# journaux de construction sur le serveur
+/*.log
