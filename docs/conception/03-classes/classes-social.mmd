@@ -1,0 +1,192 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/social/lib et la base ml_social_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service social : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref Attachment src/social/lib/social/attachment.ex:1 | defmodule MlSocial.Attachment do
+%% @ref Block src/social/lib/social/block.ex:1 | defmodule MlSocial.Block do
+%% @ref Member src/social/lib/social/member.ex:1 | defmodule MlSocial.Member do
+%% @ref Conversation src/social/lib/social/conversation.ex:1 | defmodule MlSocial.Conversation do
+%% @ref Friendship src/social/lib/social/friendship.ex:1 | defmodule MlSocial.Friendship do
+%% @ref Message src/social/lib/social/message.ex:1 | defmodule MlSocial.Message do
+%% @ref Report src/social/lib/social/report.ex:1 | defmodule MlSocial.Report do
+%% @ref Setting src/social/lib/social/setting.ex:1 | defmodule MlSocial.Setting do
+%% @ref Chat src/social/lib/social/chat.ex:1 | defmodule MlSocial.Chat do
+%% @ref Groups src/social/lib/social/groups.ex:1 | defmodule MlSocial.Groups do
+%% @ref Friends src/social/lib/social/friends.ex:1 | defmodule MlSocial.Friends do
+%% @ref Attachments src/social/lib/social/attachments.ex:1 | defmodule MlSocial.Attachments do
+%% @ref Delivery src/social/lib/social/delivery.ex:1 | defmodule MlSocial.Delivery do
+%% @ref Settings src/social/lib/social/settings.ex:1 | defmodule MlSocial.Settings do
+%% @ref Moderation src/social/lib/social/moderation.ex:1 | defmodule MlSocial.Moderation do
+%% @ref Reports src/social/lib/social/reports.ex:1 | defmodule MlSocial.Reports do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class Attachment["MlSocial.Attachment"] {
+      <<schema attachments>>
+      +id : binary_id «PK»
+      +message_id : binary_id
+      +uploader_id : binary_id
+      +kind : string
+      +content_type : string
+      +byte_size : integer
+      +width : integer
+      +height : integer
+      +filename : string
+      +alt_text : string
+      +scan : string
+      +storage_key : string
+      +erased_at : utc_datetime_usec
+      +inserted_at : utc_datetime_usec
+    }
+    class Block["MlSocial.Block"] {
+      <<schema blocks>>
+      +blocker_id : binary_id «PK»
+      +blocked_id : binary_id «PK»
+      +inserted_at : utc_datetime_usec
+    }
+    class Member["MlSocial.Member"] {
+      <<schema conversation_members>>
+      +conversation_id : binary_id «PK»
+      +user_id : binary_id «PK»
+      +joined_at : utc_datetime_usec
+      +last_read_at : utc_datetime_usec
+      +muted_until : utc_datetime_usec
+    }
+    class Conversation["MlSocial.Conversation"] {
+      <<schema conversations>>
+      +id : binary_id «PK»
+      +kind : string = "direct"
+      +name : string
+      +owner_id : binary_id
+      +user_low : binary_id
+      +user_high : binary_id
+      +inserted_at : utc_datetime_usec
+    }
+    class Friendship["MlSocial.Friendship"] {
+      <<schema friendships>>
+      +id : binary_id «PK»
+      +requester_id : binary_id
+      +addressee_id : binary_id
+      +status : string = "pending"
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Message["MlSocial.Message"] {
+      <<schema messages>>
+      +id : binary_id «PK»
+      +conversation_id : binary_id
+      +sender_id : binary_id
+      +kind : string = "text"
+      +body : string
+      +system : map
+      +removed_at : utc_datetime_usec
+      +removed_by : binary_id
+      +inserted_at : utc_datetime_usec
+    }
+    class Report["MlSocial.Report"] {
+      <<schema reports>>
+      +id : binary_id «PK»
+      +reporter_id : binary_id
+      +target_type : string
+      +target_id : Ecto.UUID
+      +reason : string
+      +details : string
+      +message_body : string
+      +message_sender_id : binary_id
+      +message_sent_at : utc_datetime_usec
+      +message_attachment_id : binary_id
+      +status : string = "open"
+      +resolution : string
+      +resolution_reason : string
+      +resolved_by : binary_id
+      +resolved_at : utc_datetime_usec
+      +sanction_id : binary_id
+      +inserted_at : utc_datetime_usec
+    }
+    class Setting["MlSocial.Setting"] {
+      <<schema settings>>
+      +user_id : binary_id «PK»
+      +show_online : boolean = true
+      +read_receipts : boolean = true
+      +friend_requests : string = "everyone"
+      +group_adds : string = "friends"
+      +lobby_invites : string = "friends"
+      +updated_at : utc_datetime_usec
+    }
+  }
+  namespace Modules_de_contexte {
+    class Chat["MlSocial.Chat"] {
+      <<module>>
+      +list(me)
+      +open(me, user_id)
+      +messages(me, conversation_id, before)
+      +send_message(me, conversation_id, params)
+      +mark_read(me, conversation_id)
+      +mute(me, conversation_id, duration)
+    }
+    class Groups["MlSocial.Groups"] {
+      <<module>>
+      +create(me, params)
+      +rename(me, conversation_id, params)
+      +add_member(me, conversation_id, user_id)
+      +remove_member(me, conversation_id, user_id)
+      +leave(me, conversation_id)
+    }
+    class Friends["MlSocial.Friends"] {
+      <<module>>
+      +send_request(me, user_id)
+      +accept(me, request_id)
+      +decline(me, request_id)
+      +remove(me, user_id)
+      +block(me, user_id)
+      +unblock(me, user_id)
+    }
+    class Attachments["MlSocial.Attachments"] {
+      <<module>>
+      +prepare(nil)
+      +store!(map)
+      +read(me, attachment_id)
+      +erase(me)
+    }
+    class Delivery["MlSocial.Delivery"] {
+      <<module>>
+      +new_message(conversation, message)
+      +message_removed(message)
+      +read(conversation_id, reader, read_at)
+      +changed(conversation_id, also)
+    }
+    class Settings["MlSocial.Settings"] {
+      <<module>>
+      +get(user_id)
+      +update(me, attrs)
+      +can_contact(from, to, kind)
+    }
+    class Moderation["MlSocial.Moderation"] {
+      <<module>>
+      +list(params)
+      +evidence(staff_id, report_id, params)
+      +resolve(staff_id, report_id, params)
+    }
+    class Reports["MlSocial.Reports"] {
+      <<module>>
+      +create(me, attrs)
+    }
+  }
+  Message "1" -- "0..1" Attachment : FK message_id (champ simple)
+  Conversation "1" -- "0..*" Member : FK conversation_id (champ simple)
+  Conversation "1" -- "0..*" Message : FK conversation_id (champ simple)
+  Chat ..> Conversation
+  Chat ..> Member
+  Chat ..> Message
+  Groups ..> Conversation
+  Groups ..> Member
+  Groups ..> Message
+  Friends ..> Friendship
+  Friends ..> Block
+  Attachments ..> Attachment
+  Settings ..> Setting
+  Moderation ..> Report
+  Reports ..> Report

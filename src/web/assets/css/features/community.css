@@ -1,0 +1,161 @@
+/* Forum : composants propres au forum (les classes de app.css d'abord). */
+@layer components {
+  /* ---------- filtres : repliables sous 768 px, toujours visibles au-delà ---------- */
+  .community-filters-toggle {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .community-filter-form {
+    display: none;
+    gap: 16px;
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .community-filters.is-open .community-filter-form {
+    display: grid;
+  }
+  @media (min-width: 768px) {
+    .community-filters-toggle {
+      display: none;
+    }
+    .community-filter-form {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+      margin-top: 0;
+      padding: 24px;
+    }
+  }
+
+  /* ---------- liste : cartes empilées (mobile), lignes avec compteurs (≥ 768 px) ---------- */
+  .discussion-list {
+    display: grid;
+    gap: 12px;
+  }
+  .discussion-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    transition: border-color 0.2s;
+  }
+  .discussion-card:hover {
+    border-color: color-mix(in srgb, var(--color-magic) 60%, transparent);
+  }
+  .discussion-card-title {
+    font-size: 1.5rem;
+    overflow-wrap: anywhere;
+  }
+  .discussion-card-excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--color-muted);
+    font-size: 0.9375rem;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow-wrap: anywhere;
+  }
+  .discussion-card-stats {
+    display: flex;
+    gap: 24px;
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+  }
+  .discussion-card-stats dd {
+    font-size: 1.125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+  @media (min-width: 768px) {
+    .discussion-card {
+      flex-direction: row;
+      align-items: center;
+      gap: 24px;
+      padding: 16px 24px;
+    }
+    .discussion-card-stats {
+      flex-shrink: 0;
+      text-align: center;
+    }
+  }
+
+  /* ---------- discussion et réponses ---------- */
+  .post {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  @media (min-width: 768px) {
+    .post {
+      padding: 24px;
+    }
+  }
+  .post-discussion {
+    gap: 16px;
+    border-radius: var(--radius-panel);
+    background: linear-gradient(160deg, var(--color-raised), var(--color-surface) 55%);
+  }
+  .post-reply.is-solution {
+    border-color: color-mix(in srgb, var(--color-success) 55%, transparent);
+    box-shadow: inset 3px 0 0 var(--color-success);
+  }
+  .post-body {
+    max-width: 72ch;
+    line-height: 1.7;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    color: var(--color-prose);
+  }
+  .post-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .vote-button[aria-pressed="true"] {
+    border-color: var(--color-magic);
+    background: color-mix(in srgb, var(--color-action) 20%, transparent);
+  }
+  .vote-count {
+    min-width: 1.5em;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-canvas) 50%, transparent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- bandeau des réponses suivies (aria-live) ---------- */
+  /* Région toujours présente (annonces fiables) ; elle ne prend de place qu'avec des notices. */
+  .community-live {
+    display: grid;
+    gap: 8px;
+  }
+  .community-live:has(*) {
+    margin-top: 16px;
+  }
+  .community-notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 4px 4px 16px;
+    border: 1px solid color-mix(in srgb, var(--color-reward) 45%, transparent);
+    border-radius: var(--radius-card);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-reward) 12%, transparent), var(--color-raised) 60%);
+  }
+  .community-notice .link {
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+  }
+}

@@ -1,0 +1,70 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_notifications_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_notifications_dev (service notifications) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 2 migrations appliquées, dernière : 20261125100001) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques oban_jobs, oban_peers, schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_notifications_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • notifications — count_positive : count >= 1
+%% @legende Index uniques partiels ou sur expression :
+%% @legende • notifications — notifications_unread_key_index : UNIQUE (user_id, dedupe_key) WHERE read_at IS NULL
+erDiagram
+  direction LR
+  email_log {
+    bigint id PK "déf. nextval(email_log_id_seq)"
+    uuid user_id "NN · ⇢ accounts.users"
+    varchar(255) dedupe_key "NN"
+    varchar(255) category "NN"
+    varchar(255) kind "NN"
+    timestamp inserted_at "NN"
+    timestamp sent_at
+  }
+  notification_events {
+    uuid user_id PK "⇢ accounts.users"
+    varchar(255) event_id PK
+    timestamp inserted_at "NN"
+  }
+  notification_read_marks {
+    uuid user_id PK "⇢ accounts.users"
+    varchar(255) dedupe_key PK
+    timestamp read_at "NN"
+  }
+  notification_settings {
+    uuid user_id PK "⇢ accounts.users"
+    jsonb channels "NN · déf. '{}'"
+    boolean quiet_enabled "NN · déf. false"
+    time(0) quiet_start "NN · déf. '22:00:00'"
+    time(0) quiet_end "NN · déf. '07:00:00'"
+    varchar(255) time_zone
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  notifications {
+    uuid id PK
+    uuid user_id "NN · UQ partiel (user_id, dedupe_key) WHERE read_at IS NULL · ⇢ accounts.users"
+    varchar(255) category "NN"
+    varchar(255) kind "NN"
+    uuid actor_id "⇢ accounts.users"
+    varchar(255) subject_type
+    varchar(255) subject_id "⇢ objet du service producteur (texte)"
+    jsonb params "NN · déf. '{}'"
+    varchar(255) dedupe_key "NN · UQ partiel (user_id, dedupe_key) WHERE read_at IS NULL"
+    integer count "NN · déf. 1"
+    timestamp read_at
+    timestamp last_event_at "NN"
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  pending_emails {
+    uuid id PK
+    uuid user_id "NN · ⇢ accounts.users"
+    uuid notification_id "⇢ notifications"
+    varchar(255) category "NN"
+    varchar(255) kind "NN"
+    uuid actor_id "⇢ accounts.users"
+    jsonb params "NN · déf. '{}'"
+    varchar(255) dedupe_key "NN"
+    boolean mandatory "NN · déf. false"
+    timestamp inserted_at "NN"
+  }

@@ -1,0 +1,232 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/learning/lib et la base ml_learning_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service learning : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref Adventure src/learning/lib/learning/catalog/adventure.ex:1 | defmodule MlLearning.Catalog.Adventure do
+%% @ref Badge src/learning/lib/learning/gamification/badge.ex:1 | defmodule MlLearning.Gamification.Badge do
+%% @ref Chapter src/learning/lib/learning/catalog/chapter.ex:1 | defmodule MlLearning.Catalog.Chapter do
+%% @ref Enrollment src/learning/lib/learning/progress/enrollment.ex:1 | defmodule MlLearning.Progress.Enrollment do
+%% @ref Action src/learning/lib/learning/offline/action.ex:1 | defmodule MlLearning.Offline.Action do
+%% @ref LessonProgress src/learning/lib/learning/progress/lesson_progress.ex:1 | defmodule MlLearning.Progress.LessonProgress do
+%% @ref Lesson src/learning/lib/learning/catalog/lesson.ex:1 | defmodule MlLearning.Catalog.Lesson do
+%% @ref Quest src/learning/lib/learning/gamification/quest.ex:1 | defmodule MlLearning.Gamification.Quest do
+%% @ref UserBadge src/learning/lib/learning/gamification/user_badge.ex:1 | defmodule MlLearning.Gamification.UserBadge do
+%% @ref XpEvent src/learning/lib/learning/progress/xp_event.ex:1 | defmodule MlLearning.Progress.XpEvent do
+%% @ref Catalog src/learning/lib/learning/catalog.ex:1 | defmodule MlLearning.Catalog do
+%% @ref Progress src/learning/lib/learning/progress.ex:1 | defmodule MlLearning.Progress do
+%% @ref Grader src/learning/lib/learning/grader.ex:1 | defmodule MlLearning.Grader do
+%% @ref Gamification src/learning/lib/learning/gamification.ex:1 | defmodule MlLearning.Gamification do
+%% @ref Badges src/learning/lib/learning/gamification/badges.ex:1 | defmodule MlLearning.Gamification.Badges do
+%% @ref Quests src/learning/lib/learning/gamification/quests.ex:1 | defmodule MlLearning.Gamification.Quests do
+%% @ref Offline src/learning/lib/learning/offline.ex:1 | defmodule MlLearning.Offline do
+%% @ref Entitlements src/learning/lib/learning/entitlements.ex:1 | defmodule MlLearning.Entitlements do
+%% @ref Importer src/learning/lib/learning/importer.ex:1 | defmodule MlLearning.Importer do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class Catalog_Adventure["MlLearning.Catalog.Adventure"] {
+      <<schema adventures>>
+      +id : binary_id «PK»
+      +slug : string
+      +title : string
+      +summary : string
+      +description : string = ""
+      +category : string
+      +difficulty : string
+      +premium : boolean = false
+      +duration_minutes : integer
+      +cover : string
+      +objectives : array~string~ = []
+      +prerequisites : array~string~ = []
+      +source : string
+      +external_id : binary_id
+      +imported_version : integer
+      +author_id : binary_id
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Gamification_Badge["MlLearning.Gamification.Badge"] {
+      <<schema badges>>
+      +id : binary_id «PK»
+      +slug : string
+      +name : string
+      +description : string
+      +icon : string
+      +rarity : string
+      +criterion : string
+      +param : string
+      +target : integer
+      +position : integer
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Catalog_Chapter["MlLearning.Catalog.Chapter"] {
+      <<schema chapters>>
+      +id : binary_id «PK»
+      +position : integer
+      +title : string
+      +adventure_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Progress_Enrollment["MlLearning.Progress.Enrollment"] {
+      <<schema enrollments>>
+      +id : binary_id «PK»
+      +user_id : binary_id
+      +completed_at : utc_datetime
+      +adventure_id : binary_id «FK»
+      +last_lesson_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Offline_Action["MlLearning.Offline.Action"] {
+      <<schema idempotent_actions>>
+      +id : binary_id «PK»
+      +user_id : binary_id
+      +key : binary_id
+      +action : string
+      +request_hash : string
+      +response : map = %｛｝
+      +lesson_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class Progress_LessonProgress["MlLearning.Progress.LessonProgress"] {
+      <<schema lesson_progress>>
+      +id : binary_id «PK»
+      +user_id : binary_id
+      +status : string = "in_progress"
+      +attempts : integer = 0
+      +notes : string
+      +draft : string
+      +notes_saved_at : utc_datetime
+      +completed_at : utc_datetime
+      +lesson_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Catalog_Lesson["MlLearning.Catalog.Lesson"] {
+      <<schema lessons>>
+      +id : binary_id «PK»
+      +position : integer
+      +title : string
+      +kind : string
+      +body : string = ""
+      +content : map = %｛｝
+      +solution : map = %｛｝ «redact»
+      +xp_reward : integer
+      +revision : integer = 1
+      +revised_at : utc_datetime
+      +chapter_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Gamification_Quest["MlLearning.Gamification.Quest"] {
+      <<schema quests>>
+      +id : binary_id «PK»
+      +slug : string
+      +title : string
+      +description : string
+      +kind : string
+      +target : integer
+      +xp_reward : integer
+      +position : integer
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Gamification_UserBadge["MlLearning.Gamification.UserBadge"] {
+      <<schema user_badges>>
+      +id : binary_id «PK»
+      +user_id : binary_id
+      +earned_at : utc_datetime
+      +equipped : boolean = false
+      +position : integer
+      +badge_id : binary_id «FK»
+    }
+    class Progress_XpEvent["MlLearning.Progress.XpEvent"] {
+      <<schema xp_events>>
+      +id : binary_id «PK»
+      +user_id : binary_id
+      +ref_key : string
+      +amount : integer
+      +inserted_at : utc_datetime
+    }
+  }
+  namespace Modules_de_contexte {
+    class Catalog["MlLearning.Catalog"] {
+      <<module>>
+      +list_adventures(params)
+      +fetch_adventure(slug)
+      +fetch_lesson(id)
+      +neighbours(lesson)
+    }
+    class Progress["MlLearning.Progress"] {
+      <<module>>
+      +enroll(user_id, adventure)
+      +open(user_id, lesson)
+      +submit(user_id, lesson, correct?)
+      +complete(user_id, lesson)
+      +award_xp(user_id, ref_key, amount)
+      +dashboard(user_id, today)
+    }
+    class Grader["MlLearning.Grader"] {
+      <<module>>
+      +grade(lesson, answer, user_id)
+    }
+    class Gamification["MlLearning.Gamification"] {
+      <<module>>
+      +after_xp(user_id, today)
+      +settle_quests(user_id, today)
+      +profile(user_id)
+    }
+    class Gamification_Badges["MlLearning.Gamification.Badges"] {
+      <<module>>
+      +award(user_id, today)
+      +achievements(user_id, today)
+      +equip(user_id, badge_ids)
+    }
+    class Gamification_Quests["MlLearning.Gamification.Quests"] {
+      <<module>>
+      +settle(user_id, date)
+    }
+    class Offline["MlLearning.Offline"] {
+      <<module>>
+      +package(user_id, lesson, now)
+      +submit(user_id, lesson, answer, replay)
+      +complete(user_id, lesson, params, replay)
+    }
+    class Entitlements["MlLearning.Entitlements"] {
+      <<module GenServer>>
+      +check(map, user_id)
+      +premium?(user_id)
+      +fresh(user_id)
+    }
+    class Importer["MlLearning.Importer"] {
+      <<module>>
+      +import(params)
+    }
+  }
+  Catalog_Adventure "1" -- "0..*" Catalog_Chapter : has_many chapters / belongs_to adventure
+  Catalog_Adventure "1" -- "0..*" Progress_Enrollment : belongs_to adventure
+  Catalog_Lesson "0..1" -- "0..*" Progress_Enrollment : belongs_to last_lesson
+  Catalog_Lesson "1" -- "0..*" Offline_Action : belongs_to lesson
+  Catalog_Lesson "1" -- "0..*" Progress_LessonProgress : belongs_to lesson
+  Catalog_Chapter "1" -- "0..*" Catalog_Lesson : has_many lessons / belongs_to chapter
+  Gamification_Badge "1" -- "0..*" Gamification_UserBadge : belongs_to badge
+  Catalog ..> Catalog_Adventure
+  Catalog ..> Catalog_Chapter
+  Catalog ..> Catalog_Lesson
+  Progress ..> Progress_Enrollment
+  Progress ..> Progress_LessonProgress
+  Progress ..> Progress_XpEvent
+  Grader ..> Catalog_Lesson
+  Gamification_Badges ..> Gamification_Badge
+  Gamification_Badges ..> Gamification_UserBadge
+  Gamification_Quests ..> Gamification_Quest
+  Offline ..> Offline_Action
+  Offline ..> Catalog_Lesson
+  Importer ..> Catalog_Adventure
+  Importer ..> Catalog_Chapter
+  Importer ..> Catalog_Lesson

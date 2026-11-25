@@ -1,0 +1,121 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/notifications/lib et la base ml_notifications_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service notifications : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref EmailLog src/notifications/lib/notifications/email_log.ex:1 | defmodule MlNotifications.EmailLog do
+%% @ref Setting src/notifications/lib/notifications/setting.ex:1 | defmodule MlNotifications.Setting do
+%% @ref Notification src/notifications/lib/notifications/notification.ex:1 | defmodule MlNotifications.Notification do
+%% @ref PendingEmail src/notifications/lib/notifications/pending_email.ex:1 | defmodule MlNotifications.PendingEmail do
+%% @ref Inbox src/notifications/lib/notifications/inbox.ex:1 | defmodule MlNotifications.Inbox do
+%% @ref Preferences src/notifications/lib/notifications/preferences.ex:1 | defmodule MlNotifications.Preferences do
+%% @ref Emails src/notifications/lib/notifications/emails.ex:1 | defmodule MlNotifications.Emails do
+%% @ref QuietHours src/notifications/lib/notifications/quiet_hours.ex:1 | defmodule MlNotifications.QuietHours do
+%% @ref Catalog src/notifications/lib/notifications/catalog.ex:1 | defmodule MlNotifications.Catalog do
+%% @ref EmailWorker src/notifications/lib/notifications/email_worker.ex:1 | defmodule MlNotifications.EmailWorker do
+%% @ref DigestWorker src/notifications/lib/notifications/digest_worker.ex:1 | defmodule MlNotifications.DigestWorker do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class EmailLog["MlNotifications.EmailLog"] {
+      <<schema email_log>>
+      +id : id «PK»
+      +user_id : binary_id
+      +dedupe_key : string
+      +category : string
+      +kind : string
+      +inserted_at : utc_datetime_usec
+      +sent_at : utc_datetime_usec
+    }
+    class Setting["MlNotifications.Setting"] {
+      <<schema notification_settings>>
+      +user_id : binary_id «PK»
+      +channels : map = %｛｝
+      +quiet_enabled : boolean = false
+      +quiet_start : time = ~T[22:00:00]
+      +quiet_end : time = ~T[07:00:00]
+      +time_zone : string
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Notification["MlNotifications.Notification"] {
+      <<schema notifications>>
+      +id : binary_id «PK»
+      +user_id : binary_id
+      +category : string
+      +kind : string
+      +actor_id : binary_id
+      +subject_type : string
+      +subject_id : string
+      +params : map = %｛｝
+      +dedupe_key : string
+      +count : integer = 1
+      +read_at : utc_datetime_usec
+      +last_event_at : utc_datetime_usec
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class PendingEmail["MlNotifications.PendingEmail"] {
+      <<schema pending_emails>>
+      +id : binary_id «PK»
+      +user_id : binary_id
+      +notification_id : binary_id
+      +category : string
+      +kind : string
+      +actor_id : binary_id
+      +params : map = %｛｝
+      +dedupe_key : string
+      +mandatory : boolean = false
+      +inserted_at : utc_datetime_usec
+    }
+  }
+  namespace Modules_de_contexte {
+    class Inbox["MlNotifications.Inbox"] {
+      <<module>>
+      +create(caller, attrs, now)
+      +list(user_id, params)
+      +unread_count(user_id)
+      +read(user_id, id, now)
+      +read_all(user_id, now)
+      +read_by_key(caller, attrs, now)
+      +clear_between(attrs)
+      +purge(now)
+    }
+    class Preferences["MlNotifications.Preferences"] {
+      <<module>>
+      +get(user_id)
+      +enabled?(s, category, channel, kind)
+      +update(user_id, attrs, now)
+    }
+    class Emails["MlNotifications.Emails"] {
+      <<module>>
+      +plan(input, setting, notification, now)
+      +limited?(user_id, key, now)
+      +request(user_id, body)
+    }
+    class QuietHours["MlNotifications.QuietHours"] {
+      <<module>>
+      +active?(s, now)
+      +ends_at(s, now)
+    }
+    class Catalog["MlNotifications.Catalog"] {
+      <<module>>
+      +validate(svc, attrs)
+      +mandatory?(kind)
+    }
+    class EmailWorker["MlNotifications.EmailWorker"] {
+      <<Oban.Worker file email>>
+      +perform(job)
+    }
+    class DigestWorker["MlNotifications.DigestWorker"] {
+      <<Oban.Worker file email>>
+      +perform(job)
+    }
+  }
+  Inbox ..> Notification
+  Inbox ..> PendingEmail
+  Preferences ..> Setting
+  Emails ..> EmailLog
+  Emails ..> PendingEmail

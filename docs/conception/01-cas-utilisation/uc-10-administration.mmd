@@ -1,0 +1,64 @@
+%% Cas d'utilisation — écran 12 « administration et modération ».
+%% @titre Cas d’utilisation — Administration et modération (écran 12)
+%% @legende Le rôle est vérifié côté serveur par chaque service à chaque requête (lu chez accounts), et par web au montage et à chaque événement. Toute action du staff est écrite dans le journal d’audit central, dans la transaction de l’action ; si l’écriture échoue, l’action n’a pas lieu.
+%% @legende Aucune route du staff ne lit une conversation privée : la preuve d’un signalement est l’instantané du message signalé, lu sur motif. Un appel est tranché par un autre membre du staff que l’auteur de la sanction.
+%% @ref Indicateurs src/web/lib/web_web/live/admin/overview_live.ex:41 | def handle_event("refresh"
+%% @ref Signalements src/web/lib/web_web/live/admin/reports_live.ex:156-180 | def handle_event("evidence"
+%% @ref Sanctions src/web/lib/web_web/live/admin/members_live.ex:58-98 | def handle_event("sanction"
+%% @ref Rôle src/web/lib/web_web/live/admin/members_live.ex:121 | def handle_event("set_role"
+%% @ref Appels src/web/lib/web_web/live/admin/appeals_live.ex:31 | def handle_event("decide"
+%% @ref Incidents src/web/lib/web_web/live/admin/incidents_live.ex:47-68 | def handle_event("open"
+%% @ref Audit src/web/lib/web_web/live/admin/audit_live.ex:40 | def handle_event("filter"
+%% @ref Support src/web/lib/web_web/live/admin/support_live.ex:95-142 | def handle_event("reply"
+%% @ref Facturation src/web/lib/web_web/live/admin/billing_live.ex:61-64 | def handle_event("adjust"
+%% @ref Appel-membre src/web/lib/web_web/live/account/sanctions_live.ex:24 | def handle_event("appeal"
+%% @ref Droits docs/admin-permissions.md:8-30 | Changer un rôle
+usecase-beta
+  direction LR
+  actor Membre
+  actor Moderateur(Modérateur)
+  actor Admin(Administrateur)
+  systemBoundary sys(MysticLore — administration)
+    IND(Consulter les indicateurs)
+    SIGN(Traiter un signalement)
+    PREUVE(Lire la preuve sur motif)
+    RETIR(Retirer un message ou un contenu)
+    SANC(Avertir ou restreindre un membre)
+    LEVER(Lever une sanction)
+    APPEL(Trancher un appel)
+    INC(Gérer un incident)
+    SUP(Répondre à une demande de support)
+    REL(Relire un projet du studio)
+    AVAT(Réinitialiser l’avatar d’un membre)
+    AUDIT(Écrire dans le journal d’audit)
+    ROLE(Changer le rôle d’un membre)
+    JOURN(Consulter et exporter le journal d’audit)
+    ABO(Consulter abonnements et webhooks en échec)
+    ADJ(Ajuster les crédits IA)
+    EFF(Effacer une demande de support)
+    MESANC(Consulter ses sanctions et faire appel)
+  end
+  Membre -- MESANC
+  Moderateur -- IND
+  Moderateur -- SIGN
+  Moderateur -- SANC
+  Moderateur -- LEVER
+  Moderateur -- APPEL
+  Moderateur -- INC
+  Moderateur -- SUP
+  Moderateur -- REL
+  Moderateur -- AVAT
+  Admin -- ROLE
+  Admin -- JOURN
+  Admin -- ABO
+  Admin -- ADJ
+  Admin -- EFF
+  PREUVE ..>:extend SIGN
+  RETIR ..>:extend SIGN
+  SANC ..>:extend SIGN
+  SIGN ..>:include AUDIT
+  SANC ..>:include AUDIT
+  ROLE ..>:include AUDIT
+  note for Admin hérite de tous les cas du modérateur — voir uc-00
+  note for APPEL par un autre membre du staff que l’auteur de la sanction
+  note for ROLE jamais le sien ; jamais le dernier administrateur

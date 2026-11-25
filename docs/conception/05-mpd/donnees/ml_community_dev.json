@@ -1,0 +1,889 @@
+{
+ "database": "ml_community_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261123154244
+ ],
+ "tables": [
+  {
+   "table": "categories",
+   "columns": [
+    {
+     "name": "slug",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "name",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "description",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "staff_only",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    }
+   ],
+   "constraints": [
+    {
+     "name": "categories_pkey",
+     "type": "p",
+     "columns": [
+      "slug"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (slug)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "categories_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "categories_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX categories_pkey ON public.categories USING btree (slug)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "discussions",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "category",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "author_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(140)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "slug",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'visible'::character varying"
+    },
+    {
+     "name": "pinned",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "locked",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "solution_reply_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "helpful_count",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "moderation_reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "edited_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "last_activity_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "discussions_helpful_count",
+     "type": "c",
+     "columns": [
+      "helpful_count"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((helpful_count >= 0))"
+    },
+    {
+     "name": "discussions_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['visible'::character varying, 'hidden'::character varying, 'removed'::character varying, 'deleted'::character varying])::text[])))"
+    },
+    {
+     "name": "discussions_category_fkey",
+     "type": "f",
+     "columns": [
+      "category"
+     ],
+     "ref_table": "categories",
+     "ref_columns": [
+      "slug"
+     ],
+     "on_delete": "a",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (category) REFERENCES categories(slug)"
+    },
+    {
+     "name": "discussions_solution_reply_id_fkey",
+     "type": "f",
+     "columns": [
+      "solution_reply_id"
+     ],
+     "ref_table": "replies",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "n",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (solution_reply_id) REFERENCES replies(id) ON DELETE SET NULL"
+    },
+    {
+     "name": "discussions_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "discussions_author_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX discussions_author_id_inserted_at_index ON public.discussions USING btree (author_id, inserted_at)"
+    },
+    {
+     "name": "discussions_category_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX discussions_category_index ON public.discussions USING btree (category)"
+    },
+    {
+     "name": "discussions_last_activity_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX discussions_last_activity_at_index ON public.discussions USING btree (last_activity_at)"
+    },
+    {
+     "name": "discussions_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "discussions_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX discussions_pkey ON public.discussions USING btree (id)"
+    },
+    {
+     "name": "discussions_slug_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX discussions_slug_index ON public.discussions USING btree (slug)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "follows",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "discussion_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "follows_discussion_id_fkey",
+     "type": "f",
+     "columns": [
+      "discussion_id"
+     ],
+     "ref_table": "discussions",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (discussion_id) REFERENCES discussions(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "follows_pkey",
+     "type": "p",
+     "columns": [
+      "user_id",
+      "discussion_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id, discussion_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "follows_discussion_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX follows_discussion_id_index ON public.follows USING btree (discussion_id)"
+    },
+    {
+     "name": "follows_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "follows_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX follows_pkey ON public.follows USING btree (user_id, discussion_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "moderation_log",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "moderator_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "action",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "metadata",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "moderation_log_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "moderation_log_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX moderation_log_inserted_at_index ON public.moderation_log USING btree (inserted_at)"
+    },
+    {
+     "name": "moderation_log_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "moderation_log_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX moderation_log_pkey ON public.moderation_log USING btree (id)"
+    },
+    {
+     "name": "moderation_log_target_type_target_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX moderation_log_target_type_target_id_index ON public.moderation_log USING btree (target_type, target_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "replies",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "discussion_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "author_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'visible'::character varying"
+    },
+    {
+     "name": "helpful_count",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "moderation_reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "edited_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "replies_helpful_count",
+     "type": "c",
+     "columns": [
+      "helpful_count"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((helpful_count >= 0))"
+    },
+    {
+     "name": "replies_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['visible'::character varying, 'hidden'::character varying, 'removed'::character varying, 'deleted'::character varying])::text[])))"
+    },
+    {
+     "name": "replies_discussion_id_fkey",
+     "type": "f",
+     "columns": [
+      "discussion_id"
+     ],
+     "ref_table": "discussions",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (discussion_id) REFERENCES discussions(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "replies_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "replies_author_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX replies_author_id_inserted_at_index ON public.replies USING btree (author_id, inserted_at)"
+    },
+    {
+     "name": "replies_discussion_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX replies_discussion_id_inserted_at_index ON public.replies USING btree (discussion_id, inserted_at)"
+    },
+    {
+     "name": "replies_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "replies_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX replies_pkey ON public.replies USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "reports",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reporter_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reason",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "details",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "snapshot",
+     "type": "jsonb",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'open'::character varying"
+    },
+    {
+     "name": "resolution",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "resolution_reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "resolved_by",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "resolved_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "reports_reason",
+     "type": "c",
+     "columns": [
+      "reason"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((reason)::text = ANY ((ARRAY['harassment'::character varying, 'spam'::character varying, 'inappropriate'::character varying, 'other'::character varying])::text[])))"
+    },
+    {
+     "name": "reports_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'resolved'::character varying])::text[])))"
+    },
+    {
+     "name": "reports_target_type",
+     "type": "c",
+     "columns": [
+      "target_type"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((target_type)::text = ANY ((ARRAY['discussion'::character varying, 'reply'::character varying])::text[])))"
+    },
+    {
+     "name": "reports_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "reports_one_open_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": "((status)::text = 'open'::text)",
+     "definition": "CREATE UNIQUE INDEX reports_one_open_index ON public.reports USING btree (reporter_id, target_type, target_id) WHERE ((status)::text = 'open'::text)"
+    },
+    {
+     "name": "reports_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "reports_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX reports_pkey ON public.reports USING btree (id)"
+    },
+    {
+     "name": "reports_status_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX reports_status_inserted_at_index ON public.reports USING btree (status, inserted_at)"
+    },
+    {
+     "name": "reports_target_type_target_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX reports_target_type_target_id_index ON public.reports USING btree (target_type, target_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "votes",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "votes_target_type",
+     "type": "c",
+     "columns": [
+      "target_type"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((target_type)::text = ANY ((ARRAY['discussion'::character varying, 'reply'::character varying])::text[])))"
+    },
+    {
+     "name": "votes_pkey",
+     "type": "p",
+     "columns": [
+      "user_id",
+      "target_type",
+      "target_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id, target_type, target_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "votes_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "votes_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX votes_pkey ON public.votes USING btree (user_id, target_type, target_id)"
+    }
+   ],
+   "triggers": null
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+%% Cas d'utilisation — écran 9 « forum ».
+%% @titre Cas d’utilisation — Forum communautaire (écran 9)
+%% @legende Le visiteur lit les contenus publics ; les contenus des membres avec qui le lecteur a un blocage sont exclus côté serveur. Une contribution se modifie 30 minutes ; un membre restreint par le staff ne publie plus (403 restricted).
+%% @legende Chaque action de modération est écrite dans le journal de modération du forum et dans le journal d’audit central d’accounts, dans la même transaction.
+%% @ref Lire src/web/lib/web_web/routes/community.ex:10-11 | live "/community/discussions/:slug", Community.ShowLive
+%% @ref Filtrer src/web/lib/web_web/live/community/index_live.ex:35 | def handle_event("filter"
+%% @ref Publier src/web/lib/web_web/live/community/form_live.ex:59 | def handle_event("save"
+%% @ref Répondre src/web/lib/web_web/live/community/show_live.ex:117 | def handle_event("reply"
+%% @ref Voter src/web/lib/web_web/live/community/show_live.ex:142 | def handle_event("vote"
+%% @ref Suivre src/web/lib/web_web/live/community/show_live.ex:163 | def handle_event(action, _params, socket) when action in ~w(follow unfollow) do
+%% @ref Solution src/web/lib/web_web/live/community/show_live.ex:185 | def handle_event("solution"
+%% @ref Signaler src/web/lib/web_web/live/community/show_live.ex:258 | def handle_event("report"
+%% @ref Modérer src/web/lib/web_web/live/community/show_live.ex:302-324 | def handle_event("moderate"
+usecase-beta
+  direction LR
+  actor Visiteur
+  actor Membre
+  actor Moderateur(Modérateur)
+  systemBoundary sys(MysticLore — forum)
+    LIRE(Lire les discussions)
+    FILT(Rechercher et filtrer par catégorie)
+    OUVR(Ouvrir une discussion)
+    REP(Répondre à une discussion)
+    MODIF(Modifier ou supprimer sa contribution)
+    VOTE(Voter « utile »)
+    SOL(Marquer une réponse comme solution)
+    SUIV(Suivre une discussion)
+    NOTIF(Être prévenu d’une nouvelle réponse)
+    SIG(Signaler une discussion ou une réponse)
+    BLOQ(Bloquer l’auteur)
+    MOD(Modérer : masquer, retirer, verrouiller, épingler, déplacer)
+    TRAIT(Traiter les signalements du forum)
+    AUDIT(Écrire l’action dans le journal d’audit)
+  end
+  Visiteur -- LIRE
+  Visiteur -- FILT
+  Membre -- LIRE
+  Membre -- FILT
+  Membre -- OUVR
+  Membre -- REP
+  Membre -- MODIF
+  Membre -- VOTE
+  Membre -- SOL
+  Membre -- SUIV
+  Membre -- SIG
+  Membre -- BLOQ
+  Moderateur -- MOD
+  Moderateur -- TRAIT
+  NOTIF ..>:extend SUIV
+  MOD ..>:include AUDIT
+  TRAIT ..>:include AUDIT
+  note for SOL auteur de la discussion seulement
+  note for MODIF auteur, dans les 30 minutes
+  note for NOTIF quand un autre membre répond ; jamais le texte de la réponse

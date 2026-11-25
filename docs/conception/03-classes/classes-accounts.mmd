@@ -1,0 +1,330 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/accounts/lib et la base ml_accounts_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service accounts : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref Preferences src/accounts/lib/accounts/preferences.ex:1 | defmodule MlAccounts.Preferences do
+%% @ref AuditEntry src/accounts/lib/accounts/audit_entry.ex:1 | defmodule MlAccounts.AuditEntry do
+%% @ref ConfirmationToken src/accounts/lib/accounts/confirmation_token.ex:1 | defmodule MlAccounts.ConfirmationToken do
+%% @ref DataExport src/accounts/lib/accounts/data_export.ex:1 | defmodule MlAccounts.DataExport do
+%% @ref DeletionStep src/accounts/lib/accounts/deletion_step.ex:1 | defmodule MlAccounts.DeletionStep do
+%% @ref IncidentUpdate src/accounts/lib/accounts/incident.ex:23 | defmodule MlAccounts.IncidentUpdate do
+%% @ref Incident src/accounts/lib/accounts/incident.ex:1 | defmodule MlAccounts.Incident do
+%% @ref LoginChallenge src/accounts/lib/accounts/login_challenge.ex:1 | defmodule MlAccounts.LoginChallenge do
+%% @ref LoginFailure src/accounts/lib/accounts/login_failure.ex:1 | defmodule MlAccounts.LoginFailure do
+%% @ref RecoveryCode src/accounts/lib/accounts/recovery_code.ex:1 | defmodule MlAccounts.RecoveryCode do
+%% @ref SanctionAppeal src/accounts/lib/accounts/sanction_appeal.ex:1 | defmodule MlAccounts.SanctionAppeal do
+%% @ref Sanction src/accounts/lib/accounts/sanction.ex:1 | defmodule MlAccounts.Sanction do
+%% @ref Session src/accounts/lib/accounts/session.ex:1 | defmodule MlAccounts.Session do
+%% @ref SupportReply src/accounts/lib/accounts/support_reply.ex:1 | defmodule MlAccounts.SupportReply do
+%% @ref SupportRequest src/accounts/lib/accounts/support_request.ex:1 | defmodule MlAccounts.SupportRequest do
+%% @ref Throttle src/accounts/lib/accounts/throttle.ex:1 | defmodule MlAccounts.Throttle do
+%% @ref UserToken src/accounts/lib/accounts/user_token.ex:1 | defmodule MlAccounts.UserToken do
+%% @ref User src/accounts/lib/accounts/user.ex:1 | defmodule MlAccounts.User do
+%% @ref MlAccounts src/accounts/lib/accounts.ex:1 | defmodule MlAccounts do
+%% @ref TwoFactor src/accounts/lib/accounts/two_factor.ex:1 | defmodule MlAccounts.TwoFactor do
+%% @ref Privacy src/accounts/lib/accounts/privacy.ex:1 | defmodule MlAccounts.Privacy do
+%% @ref Sanctions src/accounts/lib/accounts/sanctions.ex:1 | defmodule MlAccounts.Sanctions do
+%% @ref Support src/accounts/lib/accounts/support.ex:1 | defmodule MlAccounts.Support do
+%% @ref Audit src/accounts/lib/accounts/audit.ex:1 | defmodule MlAccounts.Audit do
+%% @ref Incidents src/accounts/lib/accounts/incidents.ex:1 | defmodule MlAccounts.Incidents do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class Preferences["MlAccounts.Preferences"] {
+      <<embedded_schema>>
+      +language : string = "auto"
+      +time_zone : string = "auto"
+      +theme : string = "system"
+      +reduce_motion : boolean = false
+      +high_contrast : boolean = false
+      +text_size : integer = 100
+      +underline_links : boolean = false
+      +captions : boolean = true
+      +daily_xp_goal : integer = 20
+    }
+    class AuditEntry["MlAccounts.AuditEntry"] {
+      <<schema audit_entries>>
+      +id : id «PK»
+      +service : string
+      +actor_id : Ecto.UUID
+      +action : string
+      +target_type : string
+      +target_id : string
+      +reason : string
+      +metadata : map = %｛｝
+      +inserted_at : utc_datetime_usec
+    }
+    class ConfirmationToken["MlAccounts.ConfirmationToken"] {
+      <<schema confirmation_tokens>>
+      +id : binary_id «PK»
+      +token_hash : binary «redact»
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class DataExport["MlAccounts.DataExport"] {
+      <<schema data_exports>>
+      +id : binary_id «PK»
+      +status : string = "pending"
+      +data : map «redact»
+      +failed_services : array~string~ = []
+      +completed_at : utc_datetime
+      +expires_at : utc_datetime
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class DeletionStep["MlAccounts.DeletionStep"] {
+      <<schema deletion_steps>>
+      +user_id : binary_id «PK» «FK»
+      +service : string «PK»
+      +inserted_at : utc_datetime
+    }
+    class IncidentUpdate["MlAccounts.IncidentUpdate"] {
+      <<schema incident_updates>>
+      +id : binary_id «PK»
+      +author_id : Ecto.UUID
+      +body : string
+      +status : string
+      +severity : string
+      +incident_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class Incident["MlAccounts.Incident"] {
+      <<schema incidents>>
+      +id : binary_id «PK»
+      +title : string
+      +severity : string
+      +status : string = "open"
+      +summary : string
+      +created_by : Ecto.UUID
+      +resolved_by : Ecto.UUID
+      +resolved_at : utc_datetime
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class LoginChallenge["MlAccounts.LoginChallenge"] {
+      <<schema login_challenges>>
+      +id : binary_id «PK»
+      +token_hash : binary «redact»
+      +attempts : integer = 0
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class LoginFailure["MlAccounts.LoginFailure"] {
+      <<schema login_failures>>
+      +id : id «PK»
+      +email : string
+      +inserted_at : utc_datetime
+    }
+    class RecoveryCode["MlAccounts.RecoveryCode"] {
+      <<schema recovery_codes>>
+      +id : binary_id «PK»
+      +code_hash : binary «redact»
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class SanctionAppeal["MlAccounts.SanctionAppeal"] {
+      <<schema sanction_appeals>>
+      +id : binary_id «PK»
+      +body : string
+      +status : string = "open"
+      +decided_by : Ecto.UUID
+      +decision_reason : string
+      +decided_at : utc_datetime
+      +sanction_id : binary_id «FK»
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Sanction["MlAccounts.Sanction"] {
+      <<schema sanctions>>
+      +id : binary_id «PK»
+      +kind : string
+      +reason : string
+      +issued_by : Ecto.UUID
+      +ends_at : utc_datetime
+      +ref : string
+      +lifted_at : utc_datetime
+      +lifted_by : Ecto.UUID
+      +lift_reason : string
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Session["MlAccounts.Session"] {
+      <<schema sessions>>
+      +id : binary_id «PK»
+      +token_hash : binary «redact»
+      +last_used_at : utc_datetime
+      +user_agent : string
+      +ip : string
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class SupportReply["MlAccounts.SupportReply"] {
+      <<schema support_replies>>
+      +id : binary_id «PK»
+      +author_id : Ecto.UUID
+      +body : string
+      +email_status : string
+      +request_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class SupportRequest["MlAccounts.SupportRequest"] {
+      <<schema support_requests>>
+      +id : binary_id «PK»
+      +reference : string
+      +user_id : Ecto.UUID
+      +email : string
+      +topic : string
+      +message : string
+      +locale : string = "en"
+      +status : string = "open"
+      +internal_note : string
+      +answered_at : utc_datetime
+      +closed_at : utc_datetime
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Throttle["MlAccounts.Throttle"] {
+      <<schema throttle_events>>
+      +id : id «PK»
+      +key : string
+      +inserted_at : utc_datetime
+      +reserve(key, limit, minutes)
+      +reserve(schema, field, key, limit, minutes)
+      +clear(key)
+    }
+    class UserToken["MlAccounts.UserToken"] {
+      <<schema user_tokens>>
+      +id : binary_id «PK»
+      +context : string
+      +token_hash : binary «redact»
+      +sent_to : string
+      +user_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+    class User["MlAccounts.User"] {
+      <<schema users>>
+      +id : binary_id «PK»
+      +email : string
+      +username : string
+      +display_name : string
+      +bio : string
+      +password : string «virtual» «redact»
+      +hashed_password : string «redact»
+      +role : string = "user"
+      +confirmed_at : utc_datetime
+      +totp_secret : binary «redact»
+      +totp_pending_secret : binary «redact»
+      +totp_last_step : integer
+      +totp_enabled_at : utc_datetime
+      +deletion_scheduled_at : utc_datetime
+      +deleted_at : utc_datetime
+      +restricted_until : utc_datetime
+      +pronouns : string
+      +interests : array~string~ = []
+      +cover : string
+      +profile_visibility : string = "members"
+      +avatar_crest : string
+      +avatar_image : string
+      +onboarding_status : string = "pending"
+      +onboarding_at : utc_datetime
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+      +preferences : Preferences «embeds»
+    }
+  }
+  namespace Modules_de_contexte {
+    class MlAccounts["MlAccounts"] {
+      <<module>>
+      +register(attrs)
+      +confirm(token)
+      +login(email, password, client)
+      +complete_two_factor_login(challenge, code, client)
+      +get_session_user(token)
+      +change_password(user, attrs, keep_token)
+      +request_password_reset(email)
+      +reset_password(token, attrs)
+      +update_profile(user, attrs)
+      +update_preferences(user, attrs)
+    }
+    class TwoFactor["MlAccounts.TwoFactor"] {
+      <<module>>
+      +setup(user, password)
+      +enable(user, code, now)
+      +disable(user, password, code)
+      +verify(user, code, now)
+      +regenerate_recovery_codes(user, password)
+    }
+    class Privacy["MlAccounts.Privacy"] {
+      <<module>>
+      +request_export(user, password)
+      +build_export(export_id, last_attempt?)
+      +schedule_deletion(user, params)
+      +cancel_deletion(user)
+      +execute_deletion(user_id)
+    }
+    class Sanctions["MlAccounts.Sanctions"] {
+      <<module>>
+      +issue(staff, target_id, params)
+      +lift(staff, sanction_id, params)
+      +appeal(member, sanction_id, params)
+      +decide(staff, appeal_id, params)
+    }
+    class Support["MlAccounts.Support"] {
+      <<module>>
+      +create(requester, params)
+      +reply(staff, id, params)
+      +update(staff, id, params)
+      +delete(admin, id)
+      +purge(now)
+    }
+    class Audit["MlAccounts.Audit"] {
+      <<module>>
+      +record!(actor_id, action, target_type, target_id, reason, metadata)
+      +create(service, attrs)
+      +list(params)
+      +export(admin, params)
+    }
+    class Incidents["MlAccounts.Incidents"] {
+      <<module>>
+      +open(staff, params)
+      +add_update(staff, id, params)
+      +list(params)
+    }
+  }
+  User "1" -- "0..*" ConfirmationToken : belongs_to user
+  User "1" -- "0..*" DataExport : belongs_to user
+  User "1" -- "0..*" DeletionStep : belongs_to user
+  Incident "1" -- "0..*" IncidentUpdate : has_many updates / belongs_to incident
+  User "1" -- "0..*" LoginChallenge : belongs_to user
+  User "1" -- "0..*" RecoveryCode : belongs_to user
+  Sanction "1" -- "0..*" SanctionAppeal : has_many appeals / belongs_to sanction
+  User "1" -- "0..*" SanctionAppeal : belongs_to user
+  User "1" -- "0..*" Sanction : belongs_to user
+  User "1" -- "0..*" Session : belongs_to user
+  SupportRequest "1" -- "0..*" SupportReply : has_many replies / belongs_to request
+  User "0..1" -- "0..*" SupportRequest : FK user_id (champ simple)
+  User "1" -- "0..*" UserToken : belongs_to user
+  User "1" *-- "1" Preferences : embeds_one preferences
+  MlAccounts ..> User
+  MlAccounts ..> Session
+  MlAccounts ..> ConfirmationToken
+  MlAccounts ..> LoginChallenge
+  MlAccounts ..> LoginFailure
+  MlAccounts ..> UserToken
+  TwoFactor ..> User
+  TwoFactor ..> RecoveryCode
+  Privacy ..> DataExport
+  Privacy ..> DeletionStep
+  Sanctions ..> Sanction
+  Sanctions ..> SanctionAppeal
+  Support ..> SupportRequest
+  Support ..> SupportReply
+  Audit ..> AuditEntry
+  Incidents ..> Incident
+  Incidents ..> IncidentUpdate

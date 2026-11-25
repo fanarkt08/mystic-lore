@@ -1,0 +1,187 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/multiplayer/lib et la base ml_multiplayer_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service multiplayer : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref Lobby src/multiplayer/lib/multiplayer/lobby.ex:1 | defmodule MlMultiplayer.Lobby do
+%% @ref Invite src/multiplayer/lib/multiplayer/invite.ex:1 | defmodule MlMultiplayer.Invite do
+%% @ref Link src/multiplayer/lib/multiplayer/link.ex:1 | defmodule MlMultiplayer.Link do
+%% @ref Member src/multiplayer/lib/multiplayer/member.ex:1 | defmodule MlMultiplayer.Member do
+%% @ref Message src/multiplayer/lib/multiplayer/message.ex:1 | defmodule MlMultiplayer.Message do
+%% @ref MatchEvent src/multiplayer/lib/multiplayer/match_event.ex:1 | defmodule MlMultiplayer.MatchEvent do
+%% @ref Reward src/multiplayer/lib/multiplayer/reward.ex:1 | defmodule MlMultiplayer.Reward do
+%% @ref Match src/multiplayer/lib/multiplayer/match.ex:1 | defmodule MlMultiplayer.Match do
+%% @ref Lobbies src/multiplayer/lib/multiplayer/lobbies.ex:1 | defmodule MlMultiplayer.Lobbies do
+%% @ref Invitations src/multiplayer/lib/multiplayer/invitations.ex:1 | defmodule MlMultiplayer.Invitations do
+%% @ref Matches src/multiplayer/lib/multiplayer/matches.ex:1 | defmodule MlMultiplayer.Matches do
+%% @ref MatchServer src/multiplayer/lib/multiplayer/match_server.ex:1 | defmodule MlMultiplayer.MatchServer do
+%% @ref RuneRelay src/multiplayer/lib/multiplayer/rune_relay.ex:1 | defmodule MlMultiplayer.RuneRelay do
+%% @ref Chat src/multiplayer/lib/multiplayer/chat.ex:1 | defmodule MlMultiplayer.Chat do
+%% @ref Rewards src/multiplayer/lib/multiplayer/rewards.ex:1 | defmodule MlMultiplayer.Rewards do
+%% @ref Presence src/multiplayer/lib/multiplayer/presence.ex:1 | defmodule MlMultiplayer.Presence do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class Lobby["MlMultiplayer.Lobby"] {
+      <<schema lobbies>>
+      +id : binary_id «PK»
+      +host_id : binary_id
+      +title : string
+      +visibility : string = "open"
+      +requires_approval : boolean = false
+      +max_players : integer = 4
+      +starts_at : utc_datetime_usec
+      +status : string = "waiting"
+      +current_match_id : binary_id
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Invite["MlMultiplayer.Invite"] {
+      <<schema lobby_invites>>
+      +id : binary_id «PK»
+      +lobby_id : binary_id
+      +inviter_id : binary_id
+      +invitee_id : binary_id
+      +status : string = "pending"
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Link["MlMultiplayer.Link"] {
+      <<schema lobby_links>>
+      +id : binary_id «PK»
+      +lobby_id : binary_id
+      +created_by : binary_id
+      +token_hash : binary «redact»
+      +expires_at : utc_datetime_usec
+      +max_uses : integer
+      +uses : integer = 0
+      +revoked_at : utc_datetime_usec
+      +inserted_at : utc_datetime_usec
+    }
+    class Member["MlMultiplayer.Member"] {
+      <<schema lobby_members>>
+      +lobby_id : binary_id «PK»
+      +user_id : binary_id «PK»
+      +status : string
+      +ready : boolean = false
+      +connection : string = "online"
+      +last_seen_at : utc_datetime_usec
+      +joined_at : utc_datetime_usec
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Message["MlMultiplayer.Message"] {
+      <<schema lobby_messages>>
+      +id : binary_id «PK»
+      +lobby_id : binary_id
+      +user_id : binary_id
+      +body : string
+      +inserted_at : utc_datetime_usec
+    }
+    class MatchEvent["MlMultiplayer.MatchEvent"] {
+      <<schema match_events>>
+      +match_id : binary_id «PK»
+      +seq : integer «PK»
+      +type : string
+      +user_id : binary_id
+      +payload : map = %｛｝
+      +inserted_at : utc_datetime_usec
+    }
+    class Reward["MlMultiplayer.Reward"] {
+      <<schema match_rewards>>
+      +id : binary_id «PK»
+      +match_id : binary_id
+      +user_id : binary_id
+      +amount : integer
+      +status : string = "pending"
+      +attempts : integer = 0
+      +next_attempt_at : utc_datetime_usec
+      +last_error : string
+      +awarded_at : utc_datetime_usec
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Match["MlMultiplayer.Match"] {
+      <<schema matches>>
+      +id : binary_id «PK»
+      +lobby_id : binary_id
+      +status : string = "active"
+      +last_seq : integer = 0
+      +finished_at : utc_datetime_usec
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+  }
+  namespace Modules_de_contexte {
+    class Lobbies["MlMultiplayer.Lobbies"] {
+      <<module>>
+      +create(user_id, attrs)
+      +join(user_id, lobby_id)
+      +approve(host_id, lobby_id, user_id)
+      +set_ready(user_id, lobby_id, ready)
+      +start(host_id, lobby_id, now)
+      +attempt(user_id, lobby_id, sequence)
+      +leave(user_id, lobby_id)
+      +kick(host_id, lobby_id, user_id)
+    }
+    class Invitations["MlMultiplayer.Invitations"] {
+      <<module>>
+      +invite(host_id, lobby_id, invitee_id)
+      +accept(user_id, invite_id)
+      +decline(user_id, invite_id)
+      +create_link(host_id, lobby_id, attrs, now)
+      +join_link(user_id, token, now)
+    }
+    class Matches["MlMultiplayer.Matches"] {
+      <<module>>
+      +create!(lobby, players, seed)
+      +replay(match_id)
+      +commit(match_id, expected_seq, events, state)
+    }
+    class MatchServer["MlMultiplayer.MatchServer"] {
+      <<module GenServer>>
+      +propose(match_id, user_id, sequence)
+      +set_absent(match_id, user_id, absent?)
+      +abort(match_id, reason)
+    }
+    class RuneRelay["MlMultiplayer.RuneRelay"] {
+      <<module>>
+      +start_event(seed, players)
+      +init(map)
+      +decide(state, user_id, intent)
+      +score(secret, seq)
+    }
+    class Chat["MlMultiplayer.Chat"] {
+      <<module>>
+      +list(user_id, lobby_id, before)
+      +post(user_id, lobby_id, attrs, now)
+    }
+    class Rewards["MlMultiplayer.Rewards"] {
+      <<module>>
+      +finalize(match_id, now)
+      +deliver_due(now)
+    }
+    class Presence["MlMultiplayer.Presence"] {
+      <<module>>
+      +heartbeat(user_id, lobby_id, now)
+      +sweep(now)
+    }
+  }
+  Lobby "1" -- "0..*" Invite : FK lobby_id (champ simple)
+  Lobby "1" -- "0..*" Link : FK lobby_id (champ simple)
+  Lobby "1" -- "0..*" Member : FK lobby_id (champ simple)
+  Lobby "1" -- "0..*" Message : FK lobby_id (champ simple)
+  Match "1" -- "0..*" MatchEvent : FK match_id (champ simple)
+  Match "1" -- "0..*" Reward : FK match_id (champ simple)
+  Lobby "1" -- "0..*" Match : FK lobby_id (champ simple)
+  Lobbies ..> Lobby
+  Lobbies ..> Member
+  Invitations ..> Invite
+  Invitations ..> Link
+  Matches ..> Match
+  Matches ..> MatchEvent
+  Chat ..> Message
+  Rewards ..> Reward
+  Presence ..> Member

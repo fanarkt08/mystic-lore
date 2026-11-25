@@ -1,0 +1,114 @@
+%% Séquence e : génération IA dans le studio — consentement, réservation de crédits, tâche Oban, consommation ou remboursement.
+%% Chaque « %% @ref » est contrôlé par e2e/tools/conception.mjs verifier (le texte doit figurer dans ces lignes).
+%% @titre Séquence e — Génération IA dans le studio : consentement, réservation de crédits, tâche Oban, consommation ou remboursement
+%% @legende Ordre réel : contrôles (3), puis réservation chez billing (5 à 8) HORS de toute transaction du studio, puis UNE transaction studio qui insère la génération ET sa tâche Oban (9). Si la réservation échoue, rien n'est inséré ; si l'insertion échoue, la réservation est libérée tout de suite.
+%% @legende Consentement (share_drafts_with_ai, désactivé par défaut) : évalué PENDANT la tâche (13). Un fournisseur externe ne reçoit le contexte du projet que si le demandeur ET le propriétaire ont consenti ; sinon seulement le brief saisi. Le fournisseur DÉMO (MlStudio.AI.Deterministic, sans clé) reste local et étiquette ses sorties « DEMO MODE — not a real AI ».
+%% @legende « Exactement une fois » : la tâche de règlement (SettleWorker) est insérée dans la même transaction que le statut final ; billing est idempotent par (user_id, kind, ref) avec ref = « studio:gen:‹id› » ; generations.credits ne quitte « reserved » qu'une fois. Coûts : plan 2, brouillon 5, retour 2, image 12 (VIP).
+%% @legende API Anthropic réelle non testée dans ce projet (stubs) : le schéma suit le code. Simplifications : l'annulation par le membre (POST /api/generations/:id/cancel → statut cancelled puis remboursement) et « Try again » (nouvelle génération, nouvelle réservation) ne sont pas dessinés.
+%% @ref 0 src/web/lib/web_web/live/studio/project_live.ex:388-390 | Api.put(socket, :studio, "/api/me/ai-settings",
+%% @ref 0 src/studio/lib/studio/ai.ex:64-73 | conflict_target: :user_id
+%% @ref 1 src/web/lib/web_web/live/studio/project_live.ex:321 | def handle_event("confirm_generation", params, %{assigns: %{confirm: %{} = c}} = socket) do
+%% @ref 2 src/web/lib/web_web/live/studio/project_live.ex:329-337 | Api.post(socket, :studio, "/api/projects/:id/generations",
+%% @ref 2 src/studio/lib/studio_web/router.ex:75 | post "/projects/:id/generations", AIController, :create
+%% @ref 3 src/studio/lib/studio/ai.ex:81-91 | :ok <- not_too_many(user_id),
+%% @ref 4 src/studio/lib/studio/ai.ex:92-103 | id: Ecto.UUID.generate(),
+%% @ref 4 src/studio/lib/studio/ai/generation.ex:30 | def ref(%__MODULE__{id: id}), do: "studio:gen:" <> id
+%% @ref 5 src/studio/lib/studio/ai.ex:105 | Services.reserve(user_id, cost, Generation.ref(generation), attrs.kind)
+%% @ref 5 src/studio/lib/studio/services.ex:65-70 | Client.post(:billing, "/api/internal/credits/reserve",
+%% @ref 6 src/billing/lib/billing_web/controllers/credit_controller.ex:7-11 | @callers ["studio"]
+%% @ref 6 src/billing/lib/billing/credits.ex:49-64 | nil when account.balance < amount ->
+%% @ref 6 src/billing/lib/billing/credits.ex:168-169 | Repo.transact(fn -> fun.(lock_account(user_id, now)) end)
+%% @ref 7 src/billing/lib/billing/credits.ex:276-280 | {:credits_changed, account.user_id, account.balance}
+%% @ref 8 src/studio/lib/studio/services.ex:69-79 | {:error, {:insufficient_credits, balance}}
+%% @ref 9 src/studio/lib/studio/ai.ex:111-117 | Oban.insert!(GenerationWorker.new(%{generation_id: generation.id}))
+%% @ref 9 src/studio/lib/studio/ai.ex:122-125 | Services.settle(generation.user_id, Generation.ref(generation), :release)
+%% @ref 10 src/studio/lib/studio/ai.ex:118-121 | Events.generation(generation)
+%% @ref 10 src/studio/lib/studio/events.ex:6-21 | {:studio_generation, g.project_id, MlStudio.View.generation(g)}
+%% @ref 11 src/studio/lib/studio_web/controllers/ai_controller.ex:39-41 | put_status(202) |> json(%{generation: View.generation(generation)})
+%% @ref 12 src/studio/lib/studio/ai/generation_worker.ex:5-14 | use Oban.Worker, queue: :ai, max_attempts: 3
+%% @ref 12 src/studio/lib/studio/ai.ex:299-306 | status: "running",
+%% @ref 13 src/studio/lib/studio/ai.ex:317-320 | not provider.external?() or (consent?(generation.user_id) and consent?(project.owner_id))
+%% @ref 13 src/studio/lib/studio/ai/prompt.ex:9-21 | context: if(share?, do: context(project, lesson))
+%% @ref 14 src/studio/lib/studio/ai/anthropic.ex:10-11 | @url "https://api.anthropic.com/v1/messages"
+%% @ref 14 src/studio/lib/studio/ai/anthropic.ex:31-36 | request |> body() |> post() |> output()
+%% @ref 14 src/studio/lib/studio/ai/deterministic.ex:19 | def external?, do: false
+%% @ref 15 src/studio/lib/studio/ai.ex:332-349 | mark(generation, ["running"], status: "succeeded", error: nil, finished_at: now()) do
+%% @ref 15 src/studio/lib/studio/ai.ex:352-361 | defp finish({:error, reason}, generation, last?) when reason in @retryable and not last? do
+%% @ref 15 src/studio/lib/studio/ai.ex:363-378 | Oban.insert!(SettleWorker.new(%{generation_id: failed.id}))
+%% @ref 15 src/studio/lib/studio/ai/generation_worker.ex:20-21 | def backoff(%Oban.Job{attempt: attempt}), do: 10 * attempt
+%% @ref 16 src/studio/lib/studio/ai/settle_worker.ex:3-12 | use Oban.Worker, queue: :credits, max_attempts: 20
+%% @ref 16 src/studio/lib/studio/ai.ex:386-390 | operation = if generation.status == "succeeded", do: :consume, else: :release
+%% @ref 17 src/studio/lib/studio/services.ex:83-88 | Client.post(:billing, "/api/internal/credits/#{operation}",
+%% @ref 18 src/billing/lib/billing/credits.ex:71-92 | append(account, "consumption", held.amount, 0, ref, now,
+%% @ref 18 src/billing/lib/billing/credits.ex:95-119 | refund = if held.period == account.period, do: held.amount, else: 0
+%% @ref 19 src/studio/lib/studio/ai.ex:404-409 | mark(generation, ["succeeded", "failed", "cancelled"], [credits: status],
+%% @ref 20 src/web/lib/web_web/live/studio/project_live.ex:154-172 | def handle_info({:studio_generation, _project_id, %{"id" => id} = generation}, socket) do
+sequenceDiagram
+  participant N as Navigateur
+  participant W as web (ProjectLive)
+  box service studio (:4007)
+    participant ST as studio
+    participant SDB as ml_studio (PostgreSQL)
+    participant OA as Oban file ai (GenerationWorker)
+    participant OC as Oban file credits (SettleWorker)
+  end
+  participant IA as Fournisseur d’IA
+  participant B as billing (+ ml_billing)
+  participant P as PubSub du cluster
+
+  opt 0 · consentement (chaque membre règle le sien, désactivé par défaut)
+    N->>W: case « partager mes brouillons avec l’IA »
+    W->>ST: PUT /api/me/ai-settings {share_drafts_with_ai}
+    ST->>SDB: INSERT member_settings … ON CONFLICT (user_id) DO UPDATE
+  end
+  N->>+W: 1 · « confirm_generation » : sorte, brief, coût affiché et confirmé
+  W->>+ST: 2 · POST /api/projects/‹id›/generations {kind, lesson_id, brief, confirm_cost}
+  ST->>SDB: 3 · contrôles : éditeur (404 / 403) → modifiable (409 locked) → validation (422)<br/>→ fournisseur configuré (503) → coût confirmé (409 cost_mismatch) → 5 en cours au plus (409)
+  opt sorte image
+    ST->>B: GET /api/entitlements/‹id› — formule VIP exigée (sinon 402 vip_required)
+  end
+  ST->>ST: 4 · génération construite en mémoire (UUID) — ref = « studio:gen:‹id› »
+  ST->>+B: 5 · POST /api/internal/credits/reserve<br/>{user_id, amount, ref, reason} (jeton de service)
+  B->>B: 6 · appelant « studio » seulement — BEGIN, compte verrouillé (FOR UPDATE),<br/>allocation du mois si besoin, solde ≥ coût ? INSERT credit_entries (reservation), UPDATE credit_accounts — COMMIT
+  B->>P: 7 · {:credits_changed, user_id, balance} sur « user:‹id› »
+  B-->>-ST: 8 · 200 {status: held, balance, reserved}
+  alt solde insuffisant ou billing injoignable
+    ST-->>W: 402 insufficient_credits | 503 credits_unavailable — rien n’est inséré
+  end
+  ST->>SDB: 9 · BEGIN — INSERT generations (pending, credits = reserved)<br/>INSERT oban_jobs (GenerationWorker) — COMMIT
+  ST->>P: 10 · {:studio_generation, …, pending}<br/>sur « studio:project:‹id› »
+  ST-->>-W: 11 · 202 {generation}
+  W-->>-N: « Generation started: N credits reserved »
+
+  OA->>SDB: 12 · perform : pending ou running ?<br/>UPDATE status = running (conditionnel)
+  OA->>SDB: 13 · consentement : share? = fournisseur local OU (demandeur ET propriétaire ont consenti)<br/>Prompt.request : brief seul, ou brief + contexte du projet si share?
+  alt Anthropic (ANTHROPIC_API_KEY définie)
+    OA->>IA: 14 · POST https://api.anthropic.com/v1/messages (sortie JSON contrainte)
+    IA-->>OA: réponse, puis Prompt.validate
+  else fournisseur DÉMO (sans clé, hors production)
+    OA->>OA: 14 · MlStudio.AI.Deterministic : sortie locale étiquetée « DEMO MODE »
+  end
+  alt succès
+    OA->>SDB: 15 · BEGIN — UPDATE status = succeeded + résultat<br/>INSERT oban_jobs (SettleWorker) — COMMIT
+  else erreur réessayable (429, 529, 5xx, délai) avant la 3e tentative
+    OA->>SDB: 15 · UPDATE status = pending<br/>Oban réessaie après 10 s × tentative
+  else échec définitif
+    OA->>SDB: 15 · BEGIN — UPDATE status = failed<br/>INSERT oban_jobs (SettleWorker) — COMMIT
+  end
+  OA->>P: {:studio_generation, …}<br/>(running, puis statut final)
+
+  OC->>SDB: 16 · perform : credits = reserved et statut final ?
+  alt succeeded
+    OC->>B: 17 · POST /api/internal/credits/consume {user_id, ref}
+    B->>B: 18 · INSERT credit_entries (consumption, delta 0), reserved diminue
+  else failed ou cancelled (remboursement)
+    OC->>B: 17 · POST /api/internal/credits/release {user_id, ref}
+    B->>B: 18 · INSERT credit_entries (release, delta + montant si même mois)
+  end
+  B->>P: {:credits_changed, user_id, balance}
+  B-->>OC: 200 {status: consumed | released}<br/>(rejeu : même réponse — 409 already_* si l’autre issue)
+  OC->>SDB: 19 · UPDATE generations SET credits = consumed | released<br/>WHERE credits = reserved
+  OC->>P: {:studio_generation, …}<br/>(crédits réglés)
+  Note over OC,B: billing injoignable → nouvel essai Oban (20 au plus,<br/>délai croissant) — credits reste « reserved »
+  P-)W: 20 · {:studio_generation} : carte à jour<br/>{:credits_changed} : solde rechargé
+  W-)N: diff LiveView

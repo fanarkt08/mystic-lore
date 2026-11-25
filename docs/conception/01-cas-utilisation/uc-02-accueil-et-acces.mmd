@@ -1,0 +1,66 @@
+%% Cas d'utilisation — écran 1 « accueil » et accès au compte : inscription, confirmation, connexion avec 2FA, mot de passe oublié,
+%% aide, contact, pages juridiques, langue, accueil guidé.
+%% @titre Cas d’utilisation — Accueil et accès au compte (écran 1)
+%% @legende «include» : toujours exécuté par le cas de base ; «extend» : comportement facultatif, à la condition indiquée en note. La double authentification n’est demandée que si le membre l’a activée.
+%% @legende Les e-mails (confirmation, réinitialisation, accusé du formulaire de contact) sont envoyés par accounts : en développement dans la boîte /dev/mailbox ; aucun fournisseur réel n’est configuré.
+%% @ref Accueil src/web/lib/web_web/router.ex:78 | live "/", HomeLive
+%% @ref Inscription src/web/lib/web_web/router.ex:51-55 | post "/register", RegistrationController, :create
+%% @ref Connexion src/web/lib/web_web/router.ex:48-50 | post "/login", SessionController, :create
+%% @ref 2FA src/web/lib/web_web/routes/security.ex:8-9 | post "/login/2fa", SessionController, :create_two_factor
+%% @ref Mot-de-passe src/web/lib/web_web/routes/security.ex:10-13 | post "/reset-password/:token", Security.PasswordResetController, :update
+%% @ref Aide src/web/lib/web_web/live/help_live.ex:20 | def handle_event("search"
+%% @ref Contact src/web/lib/web_web/live/contact_live.ex:69 | def handle_event("send"
+%% @ref Juridique src/web/lib/web_web/routes/pages.ex:10-11 | live "/legal/:document", LegalLive, :show
+%% @ref Langue src/web/lib/web_web/router.ex:58 | post "/locale", LocaleController, :update
+%% @ref Accueil-guidé src/web/lib/web_web/live/welcome_live.ex:143-159 | def handle_event("finish"
+%% @ref Profil-public src/web/lib/web_web/router.ex:82 | live "/members/:username", MemberLive
+usecase-beta
+  direction LR
+  actor Visiteur
+  actor Membre
+  actor Courriel(Service d’e-mail) <<système externe>>
+  systemBoundary sys(MysticLore — accueil et accès)
+    HOME(Découvrir l’accueil : aventures, formules, FAQ)
+    LANG(Choisir la langue de l’interface)
+    PROF(Consulter un profil public)
+    INSC(S’inscrire)
+    MAILC(Envoyer l’e-mail de confirmation)
+    CONF(Confirmer son adresse e-mail)
+    CONN(Se connecter)
+    TOTP(Saisir le code de double authentification)
+    OUBLI(Réinitialiser son mot de passe)
+    MAILR(Envoyer le lien de réinitialisation)
+    AIDE(Chercher dans l’aide)
+    CONT(Contacter le support)
+    ACCUSE(Envoyer l’accusé de réception)
+    LEGAL(Lire les pages juridiques)
+    GUIDE(Suivre l’accueil guidé)
+    DECO(Se déconnecter)
+  end
+  Visiteur -- HOME
+  Visiteur -- LANG
+  Visiteur -- PROF
+  Visiteur -- INSC
+  Visiteur -- CONF
+  Visiteur -- CONN
+  Visiteur -- OUBLI
+  Visiteur -- AIDE
+  Visiteur -- CONT
+  Visiteur -- LEGAL
+  Membre -- HOME
+  Membre -- PROF
+  Membre -- AIDE
+  Membre -- CONT
+  Membre -- LEGAL
+  Membre -- GUIDE
+  Membre -- DECO
+  INSC ..>:include MAILC
+  OUBLI ..>:include MAILR
+  CONT ..>:include ACCUSE
+  TOTP ..>:extend CONN
+  MAILC -- Courriel
+  MAILR -- Courriel
+  ACCUSE -- Courriel
+  note for TOTP si la 2FA est activée ; code TOTP ou code de récupération
+  note for GUIDE proposé une fois après la première connexion d’un compte confirmé
+  note for ACCUSE ne reprend jamais le texte soumis

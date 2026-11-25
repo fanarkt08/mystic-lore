@@ -1,0 +1,6 @@
+*/_build
+*/deps
+*/priv/static/assets
+*/test
+*/.elixir_ls
+*/tmp

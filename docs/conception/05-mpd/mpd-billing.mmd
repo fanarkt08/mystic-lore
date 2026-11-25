@@ -1,0 +1,103 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_billing_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_billing_dev (service billing) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 4 migrations appliquées, dernière : 20261124090000) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques oban_jobs, oban_peers, schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_billing_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • checkout_sessions — checkout_plan : plan IN ('premium', 'vip')
+%% @legende • checkout_sessions — checkout_status : status IN ('open', 'completed')
+%% @legende • credit_accounts — credit_allocation_non_negative : allocation >= 0
+%% @legende • credit_accounts — credit_balance_non_negative : balance >= 0
+%% @legende • credit_accounts — credit_reserved_non_negative : reserved >= 0
+%% @legende • credit_entries — credit_entry_amount : amount > 0
+%% @legende • credit_entries — credit_entry_balance : balance_after >= 0
+%% @legende • credit_entries — credit_entry_kind : kind IN ('allocation', 'top_up', 'reservation', 'consumption', 'release', 'expiration', 'adjustment')
+%% @legende • invoices — invoices_amount : amount_cents >= 0
+%% @legende • invoices — invoices_status : status IN ('paid', 'failed')
+%% @legende • subscriptions — subscriptions_plan : plan IN ('free', 'premium', 'vip')
+%% @legende • subscriptions — subscriptions_provider : provider IN ('local', 'stripe')
+%% @legende • subscriptions — subscriptions_status : status IN ('none', 'active', 'past_due', 'canceled')
+%% @legende • webhook_events — webhook_events_status : status IN ('received', 'processed', 'ignored', 'stale', 'failed')
+%% @legende Déclencheurs :
+%% @legende • credit_entries — credit_entries_no_update (BEFORE UPDATE, credit_entries_immutable()) : refuse toute modification d'une ligne du registre
+erDiagram
+  direction LR
+  checkout_sessions {
+    uuid id PK
+    uuid user_id "NN · ⇢ accounts.users"
+    varchar(255) plan "NN"
+    varchar(255) status "NN · déf. 'open'"
+    varchar(255) provider UK "NN · UQ (provider, provider_session_id)"
+    varchar(255) provider_session_id UK "NN · UQ (provider, provider_session_id)"
+    timestamp(0) expires_at "NN"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  credit_accounts {
+    uuid user_id PK "⇢ accounts.users"
+    varchar(255) period
+    varchar(255) plan
+    integer allocation "NN · déf. 0"
+    integer balance "NN · déf. 0"
+    integer reserved "NN · déf. 0"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  credit_entries {
+    uuid id PK
+    bigint seq "NN · déf. nextval(credit_entries_seq_seq)"
+    uuid user_id UK "NN · UQ (user_id, kind, ref) · ⇢ credit_accounts et accounts.users"
+    varchar(255) kind UK "NN · UQ (user_id, kind, ref)"
+    integer amount "NN"
+    integer delta "NN"
+    integer balance_after "NN"
+    varchar(255) ref UK "NN · UQ (user_id, kind, ref)"
+    varchar(255) reason
+    varchar(255) period "NN"
+    timestamp inserted_at "NN"
+  }
+  invoices {
+    uuid id PK
+    uuid user_id "NN · ⇢ accounts.users"
+    varchar(255) provider UK "NN · UQ (provider, provider_invoice_id)"
+    varchar(255) provider_invoice_id UK "NN · UQ (provider, provider_invoice_id)"
+    varchar(255) provider_subscription_id
+    integer amount_cents "NN"
+    varchar(255) currency "NN"
+    varchar(255) status "NN"
+    timestamp(0) period_start
+    timestamp(0) period_end
+    text hosted_url
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  subscriptions {
+    uuid id PK
+    uuid user_id UK "NN · ⇢ accounts.users"
+    varchar(255) plan "NN · déf. 'free'"
+    varchar(255) status "NN · déf. 'none'"
+    varchar(255) provider UK "NN · UQ (provider, provider_subscription_id)"
+    varchar(255) provider_customer_id
+    varchar(255) provider_subscription_id UK "UQ (provider, provider_subscription_id)"
+    timestamp(0) current_period_start
+    timestamp(0) current_period_end
+    boolean cancel_at_period_end "NN · déf. false"
+    timestamp(0) past_due_since
+    timestamp(0) last_event_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  webhook_events {
+    uuid id PK
+    varchar(255) provider UK "NN · UQ (provider, provider_event_id)"
+    varchar(255) provider_event_id UK "NN · UQ (provider, provider_event_id)"
+    varchar(255) type "NN"
+    timestamp(0) event_created_at "NN"
+    uuid user_id "⇢ accounts.users"
+    varchar(255) status "NN"
+    varchar(255) error
+    jsonb payload "NN"
+    timestamp(0) inserted_at "NN"
+  }

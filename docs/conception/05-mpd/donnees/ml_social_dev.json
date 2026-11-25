@@ -1,0 +1,1037 @@
+{
+ "database": "ml_social_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261123135120,
+  20261124090000,
+  20261125090000
+ ],
+ "tables": [
+  {
+   "table": "attachments",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "message_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "uploader_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "content_type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "byte_size",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "width",
+     "type": "integer",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "height",
+     "type": "integer",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "filename",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "alt_text",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "scan",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "storage_key",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "erased_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "attachments_kind",
+     "type": "c",
+     "columns": [
+      "kind",
+      "scan"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((((kind)::text = ANY ((ARRAY['image'::character varying, 'pdf'::character varying])::text[])) AND ((scan)::text = ANY ((ARRAY['clean'::character varying, 'unscanned'::character varying])::text[]))))"
+    },
+    {
+     "name": "attachments_text",
+     "type": "c",
+     "columns": [
+      "alt_text",
+      "filename"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(alt_text) <= 300) AND (char_length((filename)::text) <= 120)))"
+    },
+    {
+     "name": "attachments_message_id_fkey",
+     "type": "f",
+     "columns": [
+      "message_id"
+     ],
+     "ref_table": "messages",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "attachments_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "attachments_message_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX attachments_message_id_index ON public.attachments USING btree (message_id)"
+    },
+    {
+     "name": "attachments_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "attachments_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX attachments_pkey ON public.attachments USING btree (id)"
+    },
+    {
+     "name": "attachments_storage_key_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX attachments_storage_key_index ON public.attachments USING btree (storage_key)"
+    },
+    {
+     "name": "attachments_uploader_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX attachments_uploader_id_index ON public.attachments USING btree (uploader_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "blocks",
+   "columns": [
+    {
+     "name": "blocker_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "blocked_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "blocks_not_self",
+     "type": "c",
+     "columns": [
+      "blocker_id",
+      "blocked_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((blocker_id <> blocked_id))"
+    },
+    {
+     "name": "blocks_pkey",
+     "type": "p",
+     "columns": [
+      "blocker_id",
+      "blocked_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (blocker_id, blocked_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "blocks_blocked_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX blocks_blocked_id_index ON public.blocks USING btree (blocked_id)"
+    },
+    {
+     "name": "blocks_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "blocks_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX blocks_pkey ON public.blocks USING btree (blocker_id, blocked_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "conversation_members",
+   "columns": [
+    {
+     "name": "conversation_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "last_read_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "joined_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "now()"
+    },
+    {
+     "name": "muted_until",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "conversation_members_conversation_id_fkey",
+     "type": "f",
+     "columns": [
+      "conversation_id"
+     ],
+     "ref_table": "conversations",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "conversation_members_pkey",
+     "type": "p",
+     "columns": [
+      "conversation_id",
+      "user_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (conversation_id, user_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "conversation_members_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "conversation_members_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX conversation_members_pkey ON public.conversation_members USING btree (conversation_id, user_id)"
+    },
+    {
+     "name": "conversation_members_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX conversation_members_user_id_index ON public.conversation_members USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "conversations",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_low",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "user_high",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'direct'::character varying"
+    },
+    {
+     "name": "name",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "owner_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "conversations_shape",
+     "type": "c",
+     "columns": [
+      "kind",
+      "user_low",
+      "user_high",
+      "name",
+      "owner_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((((kind)::text = 'direct'::text) AND (user_low IS NOT NULL) AND (user_high IS NOT NULL) AND (user_low < user_high) AND (name IS NULL) AND (owner_id IS NULL)) OR (((kind)::text = 'group'::text) AND (user_low IS NULL) AND (user_high IS NULL) AND (owner_id IS NOT NULL) AND ((char_length((name)::text) >= 1) AND (char_length((name)::text) <= 60)))))"
+    },
+    {
+     "name": "conversations_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "conversations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "conversations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX conversations_pkey ON public.conversations USING btree (id)"
+    },
+    {
+     "name": "conversations_user_low_user_high_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX conversations_user_low_user_high_index ON public.conversations USING btree (user_low, user_high)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "friendships",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "requester_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "addressee_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'pending'::character varying"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "friendships_not_self",
+     "type": "c",
+     "columns": [
+      "requester_id",
+      "addressee_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((requester_id <> addressee_id))"
+    },
+    {
+     "name": "friendships_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying])::text[])))"
+    },
+    {
+     "name": "friendships_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "friendships_addressee_id_status_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX friendships_addressee_id_status_index ON public.friendships USING btree (addressee_id, status)"
+    },
+    {
+     "name": "friendships_pair_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX friendships_pair_index ON public.friendships USING btree (LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id))"
+    },
+    {
+     "name": "friendships_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "friendships_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX friendships_pkey ON public.friendships USING btree (id)"
+    },
+    {
+     "name": "friendships_requester_id_status_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX friendships_requester_id_status_index ON public.friendships USING btree (requester_id, status)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "messages",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "conversation_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "sender_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "removed_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "removed_by",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'text'::character varying"
+    },
+    {
+     "name": "system",
+     "type": "jsonb",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "messages_body_length",
+     "type": "c",
+     "columns": [
+      "body"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((body IS NULL) OR ((char_length(body) >= 1) AND (char_length(body) <= 2000))))"
+    },
+    {
+     "name": "messages_kind",
+     "type": "c",
+     "columns": [
+      "kind",
+      "system",
+      "body"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((((kind)::text = 'text'::text) AND (system IS NULL)) OR (((kind)::text = 'system'::text) AND (system IS NOT NULL) AND (body IS NULL))))"
+    },
+    {
+     "name": "messages_conversation_id_fkey",
+     "type": "f",
+     "columns": [
+      "conversation_id"
+     ],
+     "ref_table": "conversations",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "messages_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "messages_conversation_id_inserted_at_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX messages_conversation_id_inserted_at_id_index ON public.messages USING btree (conversation_id, inserted_at, id)"
+    },
+    {
+     "name": "messages_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "messages_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "reports",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reporter_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reason",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "details",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "message_body",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "message_sender_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "message_sent_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'open'::character varying"
+    },
+    {
+     "name": "resolution",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "resolution_reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "resolved_by",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "resolved_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "sanction_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "message_attachment_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "reports_reason",
+     "type": "c",
+     "columns": [
+      "reason"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((reason)::text = ANY ((ARRAY['harassment'::character varying, 'spam'::character varying, 'inappropriate'::character varying, 'other'::character varying])::text[])))"
+    },
+    {
+     "name": "reports_resolution",
+     "type": "c",
+     "columns": [
+      "resolution"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((resolution IS NULL) OR ((resolution)::text = ANY ((ARRAY['dismiss'::character varying, 'remove_message'::character varying, 'warn'::character varying, 'restrict'::character varying])::text[]))))"
+    },
+    {
+     "name": "reports_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'resolved'::character varying])::text[])))"
+    },
+    {
+     "name": "reports_target_type",
+     "type": "c",
+     "columns": [
+      "target_type"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((target_type)::text = ANY ((ARRAY['user'::character varying, 'message'::character varying])::text[])))"
+    },
+    {
+     "name": "reports_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "reports_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "reports_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX reports_pkey ON public.reports USING btree (id)"
+    },
+    {
+     "name": "reports_status_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX reports_status_inserted_at_index ON public.reports USING btree (status, inserted_at)"
+    },
+    {
+     "name": "reports_target_type_target_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX reports_target_type_target_id_index ON public.reports USING btree (target_type, target_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "settings",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "show_online",
+     "type": "boolean",
+     "not_null": true,
+     "default": "true"
+    },
+    {
+     "name": "read_receipts",
+     "type": "boolean",
+     "not_null": true,
+     "default": "true"
+    },
+    {
+     "name": "friend_requests",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'everyone'::character varying"
+    },
+    {
+     "name": "group_adds",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'friends'::character varying"
+    },
+    {
+     "name": "lobby_invites",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'friends'::character varying"
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "settings_values",
+     "type": "c",
+     "columns": [
+      "friend_requests",
+      "group_adds",
+      "lobby_invites"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((((friend_requests)::text = ANY ((ARRAY['everyone'::character varying, 'friends_of_friends'::character varying, 'nobody'::character varying])::text[])) AND ((group_adds)::text = ANY ((ARRAY['friends'::character varying, 'nobody'::character varying])::text[])) AND ((lobby_invites)::text = ANY ((ARRAY['friends'::character varying, 'nobody'::character varying])::text[]))))"
+    },
+    {
+     "name": "settings_pkey",
+     "type": "p",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "settings_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "settings_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX settings_pkey ON public.settings USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  }
+ ]
+}

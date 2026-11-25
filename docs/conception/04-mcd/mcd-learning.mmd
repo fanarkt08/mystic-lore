@@ -1,0 +1,63 @@
+%% MCD (Merise) — domaine learning (base ml_learning). Écrit à la main à partir du MPD relevé dans la base (05-mpd/mpd-learning.mmd).
+%% @titre MCD — domaine learning : catalogue, progression, XP et badges (notation Merise)
+%% @legende Notation Merise : rectangle = entité (nom, table physique en italique, identifiant souligné, propriétés) ; ovale = association (verbe, éventuelles propriétés) ; « min,max » = nombre de participations d’une occurrence de l’entité à l’association.
+%% @legende Pointillés : entité d’une AUTRE base (MEMBRE = accounts.users, PROJET = studio.projects). La base learning n’en garde que l’UUID (user_id, author_id, external_id) : aucune clé étrangère d’une base à l’autre.
+%% @legende Cardinalités tirées des contraintes réelles : référence NOT NULL → 1,1 ; nullable → 0,1 ; index unique sur la référence → max 1 côté opposé. Une association porteuse (PROGRESSER, OBTENIR) correspond à une table dont l’unicité porte sur le couple (user_id, lesson_id) ou (user_id, badge_id).
+%% @legende Simplifications : dates techniques inserted_at / updated_at omises ; GAIN_XP.ref_key désigne son origine par un texte (« lesson:‹id› », « adventure:‹id› », « quest:‹id›:‹jour› », « multiplayer:match:‹id› »), sans association dessinée ; QUÊTE n’a pas de lien en base (sa récompense est un GAIN_XP « quest:… »).
+%% @ref MPD docs/conception/05-mpd/mpd-learning.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Sans-FK src/learning/priv/repo/migrations/20261123134433_create_learning.exs:72 | user_id : identifiant du service accounts (pas de clé étrangère inter-bases).
+%% @ref Import src/learning/lib/learning/importer.ex:66-78 | external_id: data.external_id
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef externe fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:6 4,color:#374151
+
+  MEMBRE["<b>MEMBRE</b><br/><i>accounts.users — autre base</i><br/><u>id</u>"]:::externe
+  PROJET["<b>PROJET</b><br/><i>studio.projects — autre base</i><br/><u>id</u>"]:::externe
+
+  AVENTURE["<b>AVENTURE</b><br/><i>adventures</i><br/><u>id</u><br/>slug<br/>title<br/>summary<br/>description<br/>category<br/>difficulty<br/>premium<br/>duration_minutes<br/>cover<br/>objectives<br/>prerequisites<br/>source<br/>imported_version"]:::entite
+  CHAPITRE["<b>CHAPITRE</b><br/><i>chapters</i><br/><u>id</u><br/>position<br/>title"]:::entite
+  LECON["<b>LEÇON</b><br/><i>lessons</i><br/><u>id</u><br/>position<br/>title<br/>kind<br/>body<br/>content<br/>solution<br/>xp_reward<br/>revision<br/>revised_at"]:::entite
+  INSCRIPTION["<b>INSCRIPTION</b><br/><i>enrollments</i><br/><u>id</u><br/>completed_at"]:::entite
+  ACTION["<b>ACTION HORS LIGNE</b><br/><i>idempotent_actions</i><br/><u>id</u><br/>key<br/>action<br/>request_hash<br/>response"]:::entite
+  GAIN["<b>GAIN_XP</b><br/><i>xp_events</i><br/><u>id</u><br/>ref_key<br/>amount"]:::entite
+  BADGE["<b>BADGE</b><br/><i>badges</i><br/><u>id</u><br/>slug<br/>name<br/>description<br/>icon<br/>rarity<br/>criterion<br/>param<br/>target<br/>position"]:::entite
+  QUETE["<b>QUÊTE</b><br/><i>quests</i><br/><u>id</u><br/>slug<br/>title<br/>description<br/>kind<br/>target<br/>xp_reward<br/>position"]:::entite
+
+  CONTENIR1(["contenir"]):::association
+  CONTENIR2(["contenir"]):::association
+  EFFECTUER(["effectuer"]):::association
+  CONCERNER(["porter sur"]):::association
+  REPRENDRE(["reprendre à"]):::association
+  PROGRESSER(["PROGRESSER<br/>status, attempts, notes, draft,<br/>completed_at, notes_saved_at"]):::association
+  REJOUER(["rejouer"]):::association
+  VISER(["viser"]):::association
+  GAGNER(["gagner"]):::association
+  OBTENIR(["OBTENIR<br/>earned_at, equipped, position"]):::association
+  REDIGER(["rédiger"]):::association
+  IMPORTER(["importer"]):::association
+
+  AVENTURE ---|"0,n"| CONTENIR1
+  CONTENIR1 ---|"1,1"| CHAPITRE
+  CHAPITRE ---|"0,n"| CONTENIR2
+  CONTENIR2 ---|"1,1"| LECON
+  MEMBRE -.-|"0,n"| EFFECTUER
+  EFFECTUER ---|"1,1"| INSCRIPTION
+  INSCRIPTION ---|"1,1"| CONCERNER
+  CONCERNER ---|"0,n"| AVENTURE
+  INSCRIPTION ---|"0,1"| REPRENDRE
+  REPRENDRE ---|"0,n"| LECON
+  MEMBRE -.-|"0,n"| PROGRESSER
+  PROGRESSER ---|"0,n"| LECON
+  MEMBRE -.-|"0,n"| REJOUER
+  REJOUER ---|"1,1"| ACTION
+  ACTION ---|"1,1"| VISER
+  VISER ---|"0,n"| LECON
+  MEMBRE -.-|"0,n"| GAGNER
+  GAGNER ---|"1,1"| GAIN
+  MEMBRE -.-|"0,n"| OBTENIR
+  OBTENIR ---|"0,n"| BADGE
+  MEMBRE -.-|"0,n"| REDIGER
+  REDIGER ---|"0,1"| AVENTURE
+  PROJET -.-|"0,1"| IMPORTER
+  IMPORTER ---|"0,1"| AVENTURE

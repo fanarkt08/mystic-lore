@@ -1,0 +1,49 @@
+%% Mode hors ligne (PWA) : service worker, Cache Storage, IndexedDB, routes /offline de web et routes de learning.
+%% @titre Architecture du mode hors ligne (PWA) : service worker, IndexedDB et synchronisation par learning
+%% @legende Le service worker n’est enregistré que sur un appareil où un membre a rendu une leçon disponible hors ligne ; il ne garde que les fichiers statiques et la page /offline (jamais une page du compte, une réponse d’API, /live ni un envoi).
+%% @legende Une copie (récit ou quiz premium, SANS la solution) est gardée dans l’IndexedDB du navigateur, pour ce membre seulement, et expire après 14 jours au plus, jamais après la fin de la période payée. Hors ligne, rien n’est corrigé sur l’appareil : la réponse est mise en file, puis rejouée par learning avec sa clé d’idempotence et la révision téléchargée (XP une seule fois).
+%% @legende Effacement : à la déconnexion (script de la page, puis en-tête Clear-Site-Data: "storage"), à la connexion d’un autre membre sur l’appareil, à la fin de l’accès Premium (événement ml:offline-purge) et par « Clear offline data » dans /settings/offline.
+%% @ref Routes src/web/lib/web_web/router.ex:35-42 | post "/sync", OfflineController, :sync
+%% @ref Page src/web/lib/web_web/router.ex:65 | get "/offline", OfflineController, :shell
+%% @ref Paquet src/learning/lib/learning_web/router.ex:43 | get "/lessons/:id/offline", LessonController, :offline
+%% @ref Rejeu src/web/lib/web_web/offline.ex:204-209 | idempotency_key
+%% @ref Purge src/web/lib/web_web/offline.ex:17-19 | ml:offline-purge
+%% @ref Déconnexion src/web/lib/web_web/controllers/session_controller.ex:115 | put_resp_header("clear-site-data", ~s("storage"))
+%% @ref Contrat docs/contracts/offline.md:127-129 | **IndexedDB** `mysticlore-offline` (créée seulement au premier téléchargement)
+flowchart LR
+  classDef comp fill:#f2f3f5,stroke:#374151,stroke-width:1.2px,color:#111111
+  classDef base fill:#ffffff,stroke:#374151,stroke-width:1.2px,color:#111111
+
+  subgraph NAVIG["Navigateur du membre Premium ou VIP"]
+    PAGE["<b>Page de la leçon</b> (LiveView)<br/>« Make available offline »"]:::comp
+    OFFP["<b>Page /offline</b> sans LiveView<br/>liste et lecture des copies, réponses en file"]:::comp
+    JS["<b>offline.js / offline_store.js</b><br/>téléchargement, file, synchronisation (Web Locks)"]:::comp
+    SW["<b>Service worker /sw.js</b><br/>précache, réseau d’abord ou cache d’abord"]:::comp
+    CACHE[("<b>Cache Storage</b><br/>mysticlore-static-‹version›")]:::base
+    IDB[("<b>IndexedDB mysticlore-offline</b><br/>meta · packages · queue · reports")]:::base
+  end
+
+  subgraph WEB["web :4000"]
+    OC["<b>OfflineController</b><br/>GET /offline/session<br/>GET /offline/packages/:lesson_id<br/>POST /offline/sync (CSRF, 50 actions)"]:::comp
+    MO["<b>MysticWeb.Offline</b><br/>rejeu, refus expliqués, purge"]:::comp
+  end
+
+  subgraph LRN["learning :4002"]
+    PKG["<b>GET /api/lessons/:id/offline</b><br/>droits relus chez billing, expiration ≤ 14 j"]:::comp
+    SUB["<b>POST /api/lessons/:id/submit · complete</b><br/>idempotency_key + revision"]:::comp
+    DB[("ml_learning<br/>idempotent_actions")]:::base
+  end
+  BIL["billing<br/>GET /api/entitlements/:id"]:::comp
+
+  PAGE -->|"téléchargement"| JS
+  JS -->|"GET /offline/packages/:id"| OC
+  OC --> PKG
+  PKG -->|"droits sans cache"| BIL
+  JS -->|"copie sans solution"| IDB
+  JS -->|"ml:precache"| SW
+  SW --> CACHE
+  OFFP --> IDB
+  JS -->|"POST /offline/sync"| OC
+  OC --> MO
+  MO --> SUB
+  SUB --> DB

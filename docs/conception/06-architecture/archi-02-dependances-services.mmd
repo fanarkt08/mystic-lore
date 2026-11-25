@@ -1,0 +1,48 @@
+%% Composants : dépendances réelles entre services (appels HTTP signés relevés par MlShared.Client dans src/*/lib), hors web.
+%% @titre Composants : appels HTTP signés entre services (relevés dans le code)
+%% @legende Chaque flèche est un appel réel MlShared.Client.get|post|delete(:service, route) trouvé dans src/‹service›/lib (web, qui appelle les 8 services, n’est pas dessiné). Toutes portent le jeton interne HMAC ; le service appelé vérifie l’appelant (« svc ») et, s’il y a lieu, le membre (« sub »). Un GET est relancé 2 fois (100 puis 200 ms), une écriture jamais.
+%% @legende Notifications : accounts, billing et studio passent par Oban (tâche durable NotifyWorker) ; social, community, multiplayer et learning envoient « au mieux » (tâche en mémoire, 6 essais en environ 52 s), sans jamais bloquer l’action d’origine.
+%% @legende Données personnelles : accounts orchestre l’export (GET …/export) et la suppression (DELETE …) chez les 7 autres services, dans l’ordre multiplayer → studio → community → social → billing → learning → notifications, puis anonymise le compte.
+%% @ref Privacy-export src/accounts/lib/accounts/privacy.ex:201 | Client.get(service, "/api/internal/users/#{user_id}/export", receive_timeout: 30_000)
+%% @ref Privacy-delete src/accounts/lib/accounts/privacy.ex:416 | Client.delete(service, "/api/internal/users/#{user.id}")
+%% @ref Ordre docs/account-deletion.md:12 | multiplayer → studio → community → social → billing → learning → notifications
+%% @ref Notifications src/shared/lib/ml_shared/notifications.ex:12-14 | Client.post("/api/internal/notifications", json: notification)
+%% @ref Audit-social src/social/lib/social/accounts.ex:83 | MlShared.Client.post(:accounts, "/api/internal/audit",
+%% @ref Audit-studio src/studio/lib/studio/services.ex:33 | Client.post(:accounts, "/api/internal/audit",
+%% @ref Crédits src/studio/lib/studio/services.ex:65-66 | Client.post(:billing, "/api/internal/credits/reserve",
+%% @ref Import src/studio/lib/studio/services.ex:89-93 | /api/internal/adventures/import
+%% @ref XP src/multiplayer/lib/multiplayer/rewards.ex:1-102 | /api/internal/xp
+%% @ref Can-contact src/multiplayer/lib/multiplayer/social.ex:1-51 | can-contact
+%% @ref Droits src/learning/lib/learning/entitlements.ex:37 | MlShared.Client.get(:billing, "/api/entitlements/" <> URI.encode_www_form(user_id))
+%% @ref E-mails src/notifications/lib/notifications/accounts.ex:1-31 | /api/users
+flowchart LR
+  classDef svc fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+
+  ACC["<b>accounts</b> :4001"]:::svc
+  LRN["<b>learning</b> :4002"]:::svc
+  BIL["<b>billing</b> :4003"]:::svc
+  SOC["<b>social</b> :4004"]:::svc
+  MUL["<b>multiplayer</b> :4005"]:::svc
+  COM["<b>community</b> :4006"]:::svc
+  STU["<b>studio</b> :4007"]:::svc
+  NOT["<b>notifications</b> :4008"]:::svc
+
+  ACC -->|"GET /api/entitlements/:id — thème VIP"| BIL
+  ACC -->|"GET /api/internal/relationship — profil « amis »"| SOC
+  ACC -.->|"GET …/export, DELETE /api/internal/users/:id"| LRN & BIL & SOC & MUL & COM & STU & NOT
+  LRN -->|"GET /api/entitlements/:id"| BIL
+  LRN -->|"GET /api/internal/users/:id — rôle"| ACC
+  BIL -->|"GET /api/internal/users/:id, POST /api/internal/audit"| ACC
+  SOC -->|"GET /api/users, /api/internal/users/:id<br/>POST /api/admin/users/:id/sanctions, /api/internal/audit"| ACC
+  MUL -->|"GET /api/users, /api/internal/users/:id"| ACC
+  MUL -->|"GET /api/internal/blocks/:id, /api/internal/can-contact<br/>POST /api/reports"| SOC
+  MUL -->|"POST /api/internal/xp — victoire"| LRN
+  COM -->|"GET /api/users, /api/internal/users/:id<br/>POST /api/internal/audit"| ACC
+  COM -->|"GET /api/internal/blocks/:id"| SOC
+  STU -->|"GET /api/users/by-username, /api/internal/users/:id<br/>POST /api/internal/audit"| ACC
+  STU -->|"GET /api/entitlements/:id<br/>POST /api/internal/credits/reserve | consume | release"| BIL
+  STU -->|"GET /api/internal/relationship"| SOC
+  STU -->|"POST /api/internal/adventures/import"| LRN
+  NOT -->|"GET /api/users<br/>POST /api/internal/users/:id/notification-email"| ACC
+  ACC & BIL & STU ==>|"POST /api/internal/notifications — Oban"| NOT
+  SOC & COM & MUL & LRN -.->|"POST /api/internal/notifications — au mieux"| NOT

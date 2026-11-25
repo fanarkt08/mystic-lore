@@ -1,0 +1,61 @@
+%% Cas d'utilisation — vue générale : un cas par écran du cahier des charges (12 écrans), détaillés dans uc-02 à uc-10.
+%% @titre Cas d’utilisation — Vue générale de MysticLore : les 12 écrans du cahier des charges
+%% @legende Un cas par écran (son numéro dans le cahier des charges suit le tiret) ; chacun est détaillé dans un diagramme dédié : accès et accueil uc-02, apprentissage uc-03, multijoueur uc-04, studio uc-05, amis et messages uc-06, forum uc-07, abonnement uc-08, paramètres uc-09, administration uc-10.
+%% @legende Membre Premium hérite de Membre (voir uc-00) : il réalise tous les cas du membre, plus les aventures premium et les leçons hors ligne.
+%% @ref Pages-publiques src/web/lib/web_web/router.ex:76-82 | live_session :public,
+%% @ref Pages-membre src/web/lib/web_web/router.ex:92-108 | live_session :member,
+%% @ref Multijoueur src/web/lib/web_web/routes/multiplayer.ex:11 | live "/multiplayer", Multiplayer.IndexLive
+%% @ref Studio src/web/lib/web_web/routes/studio.ex:15-20 | live "/studio/credits", Studio.CreditsLive
+%% @ref Forum src/web/lib/web_web/routes/community.ex:10-18 | live "/community", Community.IndexLive
+%% @ref Profil src/web/lib/web_web/routes/gamification.ex:10 | live "/achievements", Gamification.AchievementsLive
+%% @ref Admin src/web/lib/web_web/routes/admin.ex:12-26 | live "/admin", Admin.OverviewLive
+usecase-beta
+  direction LR
+  actor Visiteur
+  actor Membre
+  actor Premium(Membre Premium)
+  actor Moderateur(Modérateur)
+  actor Admin(Administrateur)
+  actor Stripe <<système externe>>
+  actor IA(Fournisseur d’IA) <<système externe>>
+  actor Courriel(Service d’e-mail) <<système externe>>
+  systemBoundary sys(MysticLore)
+    E1(Découvrir MysticLore sur l’accueil — 1)
+    ACC(S’inscrire et se connecter)
+    E2(Parcourir le catalogue des aventures — 2)
+    E3(Suivre sa progression sur le tableau de bord — 3)
+    E4(Suivre une leçon dans le lecteur — 4)
+    PREM(Accéder aux aventures premium et hors ligne)
+    E5(Jouer à The Rune Relay — 5)
+    E6(Créer une aventure avec le studio IA — 6)
+    E7(Gérer son profil et ses badges — 7)
+    E8(Échanger avec ses amis — 8)
+    E9(Participer au forum — 9)
+    E10(Gérer son abonnement — 10)
+    E11(Régler ses paramètres — 11)
+    E12(Administrer et modérer — 12)
+  end
+  Visiteur -- E1
+  Visiteur -- ACC
+  Visiteur -- E2
+  Visiteur -- E9
+  Membre -- E1
+  Membre -- E2
+  Membre -- E3
+  Membre -- E4
+  Membre -- E5
+  Membre -- E6
+  Membre -- E7
+  Membre -- E8
+  Membre -- E9
+  Membre -- E10
+  Membre -- E11
+  Premium -- PREM
+  PREM ..>:extend E4
+  Moderateur -- E12
+  Admin -- E12
+  ACC -- Courriel
+  E10 -- Stripe
+  E6 -- IA
+  note for E9 visiteur : lecture seule
+  note for E12 l’administrateur a des droits en plus — voir uc-10

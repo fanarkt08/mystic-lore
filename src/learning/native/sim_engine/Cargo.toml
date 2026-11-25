@@ -1,0 +1,19 @@
+[package]
+name = "sim_engine"
+version = "0.1.0"
+edition = "2021"
+description = "MysticLore: optional native simulation engine (orbit, reaction), identical to the Elixir engine"
+publish = false
+
+# No dependency: a tiny JSON reader/writer is enough for integer-only requests (builds offline).
+[dependencies]
+
+[[bin]]
+name = "ml_sim"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

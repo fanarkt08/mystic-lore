@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Installe les dépendances et prépare les bases des 8 services à base de données (idempotent).
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export DB_USER="${DB_USER:-$(whoami)}" DB_PASSWORD="${DB_PASSWORD:-}"
+(cd "$ROOT/src/shared" && mix deps.get)
+for s in accounts learning billing social multiplayer community studio notifications; do
+  echo "==> $s"
+  (cd "$ROOT/src/$s" && mix deps.get && mix ecto.create && mix ecto.migrate && mix run priv/repo/seeds.exs)
+done
+echo "==> learning : moteur de simulation natif (OPTIONNEL, Rust)"
+if command -v cargo >/dev/null 2>&1; then
+  if (cd "$ROOT/src/learning/native/sim_engine" && cargo build --release --quiet); then
+    mkdir -p "$ROOT/src/learning/priv/native"
+    cp "$ROOT/src/learning/native/sim_engine/target/release/ml_sim" "$ROOT/src/learning/priv/native/ml_sim"
+    echo "    ml_sim construit (SIM_ENGINE=auto l'utilisera)"
+  else
+    echo "    échec de la compilation Rust : les simulations utiliseront le moteur Elixir (résultats identiques)"
+  fi
+else
+  echo "    cargo absent : les simulations utiliseront le moteur Elixir (résultats identiques, voir src/learning/native/README.md)"
+fi
+echo "==> web"
+(cd "$ROOT/src/web" && mix deps.get && mix assets.setup && mix assets.build)
+echo "OK. Lancez : bin/dev"

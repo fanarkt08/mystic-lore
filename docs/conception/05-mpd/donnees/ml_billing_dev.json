@@ -1,0 +1,1209 @@
+{
+ "database": "ml_billing_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261123135136,
+  20261123135138,
+  20261123154346,
+  20261124090000
+ ],
+ "tables": [
+  {
+   "table": "checkout_sessions",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "plan",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'open'::character varying"
+    },
+    {
+     "name": "provider",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider_session_id",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "checkout_plan",
+     "type": "c",
+     "columns": [
+      "plan"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((plan)::text = ANY ((ARRAY['premium'::character varying, 'vip'::character varying])::text[])))"
+    },
+    {
+     "name": "checkout_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'completed'::character varying])::text[])))"
+    },
+    {
+     "name": "checkout_sessions_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "checkout_sessions_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "checkout_sessions_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX checkout_sessions_pkey ON public.checkout_sessions USING btree (id)"
+    },
+    {
+     "name": "checkout_sessions_provider_provider_session_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX checkout_sessions_provider_provider_session_id_index ON public.checkout_sessions USING btree (provider, provider_session_id)"
+    },
+    {
+     "name": "checkout_sessions_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX checkout_sessions_user_id_index ON public.checkout_sessions USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "credit_accounts",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "period",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "plan",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "allocation",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "balance",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "reserved",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "credit_allocation_non_negative",
+     "type": "c",
+     "columns": [
+      "allocation"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((allocation >= 0))"
+    },
+    {
+     "name": "credit_balance_non_negative",
+     "type": "c",
+     "columns": [
+      "balance"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((balance >= 0))"
+    },
+    {
+     "name": "credit_reserved_non_negative",
+     "type": "c",
+     "columns": [
+      "reserved"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((reserved >= 0))"
+    },
+    {
+     "name": "credit_accounts_pkey",
+     "type": "p",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "credit_accounts_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "credit_accounts_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX credit_accounts_pkey ON public.credit_accounts USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "credit_entries",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "seq",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('credit_entries_seq_seq'::regclass)"
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "amount",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "delta",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "balance_after",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "ref",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reason",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "period",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "credit_entry_amount",
+     "type": "c",
+     "columns": [
+      "amount"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((amount > 0))"
+    },
+    {
+     "name": "credit_entry_balance",
+     "type": "c",
+     "columns": [
+      "balance_after"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((balance_after >= 0))"
+    },
+    {
+     "name": "credit_entry_kind",
+     "type": "c",
+     "columns": [
+      "kind"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((kind)::text = ANY ((ARRAY['allocation'::character varying, 'top_up'::character varying, 'reservation'::character varying, 'consumption'::character varying, 'release'::character varying, 'expiration'::character varying, 'adjustment'::character varying])::text[])))"
+    },
+    {
+     "name": "credit_entries_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "credit_entries_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "credit_entries_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX credit_entries_pkey ON public.credit_entries USING btree (id)"
+    },
+    {
+     "name": "credit_entries_user_id_kind_ref_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX credit_entries_user_id_kind_ref_index ON public.credit_entries USING btree (user_id, kind, ref)"
+    },
+    {
+     "name": "credit_entries_user_id_seq_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX credit_entries_user_id_seq_index ON public.credit_entries USING btree (user_id, seq)"
+    }
+   ],
+   "triggers": [
+    {
+     "name": "credit_entries_no_update",
+     "definition": "CREATE TRIGGER credit_entries_no_update BEFORE UPDATE ON public.credit_entries FOR EACH ROW EXECUTE FUNCTION credit_entries_immutable()"
+    }
+   ]
+  },
+  {
+   "table": "invoices",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider_invoice_id",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider_subscription_id",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "amount_cents",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "currency",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "period_start",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "period_end",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "hosted_url",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "invoices_amount",
+     "type": "c",
+     "columns": [
+      "amount_cents"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((amount_cents >= 0))"
+    },
+    {
+     "name": "invoices_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['paid'::character varying, 'failed'::character varying])::text[])))"
+    },
+    {
+     "name": "invoices_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "invoices_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "invoices_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX invoices_pkey ON public.invoices USING btree (id)"
+    },
+    {
+     "name": "invoices_provider_provider_invoice_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX invoices_provider_provider_invoice_id_index ON public.invoices USING btree (provider, provider_invoice_id)"
+    },
+    {
+     "name": "invoices_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX invoices_user_id_inserted_at_index ON public.invoices USING btree (user_id, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_jobs",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('oban_jobs_id_seq'::regclass)"
+    },
+    {
+     "name": "state",
+     "type": "oban_job_state",
+     "not_null": true,
+     "default": "'available'::oban_job_state"
+    },
+    {
+     "name": "queue",
+     "type": "text",
+     "not_null": true,
+     "default": "'default'::text"
+    },
+    {
+     "name": "worker",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "args",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "errors",
+     "type": "jsonb[]",
+     "not_null": true,
+     "default": "ARRAY[]::jsonb[]"
+    },
+    {
+     "name": "attempt",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "max_attempts",
+     "type": "integer",
+     "not_null": true,
+     "default": "20"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "scheduled_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "attempted_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "completed_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "attempted_by",
+     "type": "text[]",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "discarded_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "priority",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "tags",
+     "type": "text[]",
+     "not_null": false,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "meta",
+     "type": "jsonb",
+     "not_null": false,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "cancelled_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "attempt_range",
+     "type": "c",
+     "columns": [
+      "attempt",
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((attempt >= 0) AND (attempt <= max_attempts)))"
+    },
+    {
+     "name": "non_negative_priority",
+     "type": "c",
+     "columns": [
+      "priority"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((priority >= 0)) NOT VALID"
+    },
+    {
+     "name": "positive_max_attempts",
+     "type": "c",
+     "columns": [
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((max_attempts > 0))"
+    },
+    {
+     "name": "queue_length",
+     "type": "c",
+     "columns": [
+      "queue"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128)))"
+    },
+    {
+     "name": "worker_length",
+     "type": "c",
+     "columns": [
+      "worker"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_jobs_args_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_args_index ON public.oban_jobs USING gin (args)"
+    },
+    {
+     "name": "oban_jobs_meta_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta)"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_jobs_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_jobs_pkey ON public.oban_jobs USING btree (id)"
+    },
+    {
+     "name": "oban_jobs_state_cancelled_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_cancelled_at_index ON public.oban_jobs USING btree (state, cancelled_at)"
+    },
+    {
+     "name": "oban_jobs_state_discarded_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_discarded_at_index ON public.oban_jobs USING btree (state, discarded_at)"
+    },
+    {
+     "name": "oban_jobs_state_queue_priority_scheduled_at_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban_jobs USING btree (state, queue, priority, scheduled_at, id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_peers",
+   "columns": [
+    {
+     "name": "name",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "node",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "started_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "oban_peers_pkey",
+     "type": "p",
+     "columns": [
+      "name"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (name)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_peers_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_peers_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_peers_pkey ON public.oban_peers USING btree (name)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "subscriptions",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "plan",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'free'::character varying"
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'none'::character varying"
+    },
+    {
+     "name": "provider",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider_customer_id",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "provider_subscription_id",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "current_period_start",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "current_period_end",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "cancel_at_period_end",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "past_due_since",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "last_event_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "subscriptions_plan",
+     "type": "c",
+     "columns": [
+      "plan"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((plan)::text = ANY ((ARRAY['free'::character varying, 'premium'::character varying, 'vip'::character varying])::text[])))"
+    },
+    {
+     "name": "subscriptions_provider",
+     "type": "c",
+     "columns": [
+      "provider"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((provider)::text = ANY ((ARRAY['local'::character varying, 'stripe'::character varying])::text[])))"
+    },
+    {
+     "name": "subscriptions_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['none'::character varying, 'active'::character varying, 'past_due'::character varying, 'canceled'::character varying])::text[])))"
+    },
+    {
+     "name": "subscriptions_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "subscriptions_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "subscriptions_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX subscriptions_pkey ON public.subscriptions USING btree (id)"
+    },
+    {
+     "name": "subscriptions_provider_provider_customer_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX subscriptions_provider_provider_customer_id_index ON public.subscriptions USING btree (provider, provider_customer_id)"
+    },
+    {
+     "name": "subscriptions_provider_provider_subscription_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX subscriptions_provider_provider_subscription_id_index ON public.subscriptions USING btree (provider, provider_subscription_id)"
+    },
+    {
+     "name": "subscriptions_user_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX subscriptions_user_id_index ON public.subscriptions USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "webhook_events",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider_event_id",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "event_created_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "error",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "payload",
+     "type": "jsonb",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "webhook_events_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['received'::character varying, 'processed'::character varying, 'ignored'::character varying, 'stale'::character varying, 'failed'::character varying])::text[])))"
+    },
+    {
+     "name": "webhook_events_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "webhook_events_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "webhook_events_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX webhook_events_pkey ON public.webhook_events USING btree (id)"
+    },
+    {
+     "name": "webhook_events_provider_provider_event_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX webhook_events_provider_provider_event_id_index ON public.webhook_events USING btree (provider, provider_event_id)"
+    },
+    {
+     "name": "webhook_events_status_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX webhook_events_status_inserted_at_index ON public.webhook_events USING btree (status, inserted_at)"
+    }
+   ],
+   "triggers": null
+  }
+ ]
+}

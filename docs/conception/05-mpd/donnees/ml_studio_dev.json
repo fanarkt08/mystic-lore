@@ -1,0 +1,1762 @@
+{
+ "database": "ml_studio_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261123155001,
+  20261123155002,
+  20261123200000,
+  20261124100000
+ ],
+ "tables": [
+  {
+   "table": "collaborators",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "project_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "username",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "role",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "invited_by",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "collaborators_role",
+     "type": "c",
+     "columns": [
+      "role"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((role)::text = ANY ((ARRAY['editor'::character varying, 'viewer'::character varying])::text[])))"
+    },
+    {
+     "name": "collaborators_project_id_fkey",
+     "type": "f",
+     "columns": [
+      "project_id"
+     ],
+     "ref_table": "projects",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "collaborators_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "collaborators_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "collaborators_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX collaborators_pkey ON public.collaborators USING btree (id)"
+    },
+    {
+     "name": "collaborators_project_id_user_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX collaborators_project_id_user_id_index ON public.collaborators USING btree (project_id, user_id)"
+    },
+    {
+     "name": "collaborators_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX collaborators_user_id_index ON public.collaborators USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "generations",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "project_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lesson_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'pending'::character varying"
+    },
+    {
+     "name": "cost",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "provider",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "model",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "brief",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "result",
+     "type": "jsonb",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "error",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "credits",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'reserved'::character varying"
+    },
+    {
+     "name": "retry_of",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "applied_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "started_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "finished_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "generations_credits",
+     "type": "c",
+     "columns": [
+      "credits"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((credits)::text = ANY ((ARRAY['reserved'::character varying, 'consumed'::character varying, 'released'::character varying])::text[])))"
+    },
+    {
+     "name": "generations_kind",
+     "type": "c",
+     "columns": [
+      "kind"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((kind)::text = ANY ((ARRAY['outline'::character varying, 'lesson_draft'::character varying, 'feedback'::character varying, 'image'::character varying])::text[])))"
+    },
+    {
+     "name": "generations_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'running'::character varying, 'succeeded'::character varying, 'failed'::character varying, 'cancelled'::character varying])::text[])))"
+    },
+    {
+     "name": "generations_lesson_id_fkey",
+     "type": "f",
+     "columns": [
+      "lesson_id"
+     ],
+     "ref_table": "lessons",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "n",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE SET NULL"
+    },
+    {
+     "name": "generations_project_id_fkey",
+     "type": "f",
+     "columns": [
+      "project_id"
+     ],
+     "ref_table": "projects",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "generations_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "generations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "generations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX generations_pkey ON public.generations USING btree (id)"
+    },
+    {
+     "name": "generations_project_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX generations_project_id_inserted_at_index ON public.generations USING btree (project_id, inserted_at)"
+    },
+    {
+     "name": "generations_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX generations_user_id_inserted_at_index ON public.generations USING btree (user_id, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "images",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "project_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lesson_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "uploader_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "alt",
+     "type": "text",
+     "not_null": true,
+     "default": "''::text"
+    },
+    {
+     "name": "content_type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "byte_size",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "source",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "images_size",
+     "type": "c",
+     "columns": [
+      "byte_size"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((byte_size > 0) AND (byte_size <= 2097152)))"
+    },
+    {
+     "name": "images_source",
+     "type": "c",
+     "columns": [
+      "source"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((source)::text = ANY ((ARRAY['upload'::character varying, 'demo'::character varying])::text[])))"
+    },
+    {
+     "name": "images_type",
+     "type": "c",
+     "columns": [
+      "content_type"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((content_type)::text = ANY ((ARRAY['image/png'::character varying, 'image/jpeg'::character varying, 'image/webp'::character varying, 'image/svg+xml'::character varying])::text[])))"
+    },
+    {
+     "name": "images_lesson_id_fkey",
+     "type": "f",
+     "columns": [
+      "lesson_id"
+     ],
+     "ref_table": "lessons",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "n",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE SET NULL"
+    },
+    {
+     "name": "images_project_id_fkey",
+     "type": "f",
+     "columns": [
+      "project_id"
+     ],
+     "ref_table": "projects",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "images_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "images_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "images_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX images_pkey ON public.images USING btree (id)"
+    },
+    {
+     "name": "images_project_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX images_project_id_index ON public.images USING btree (project_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "lessons",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "project_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "module_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": "''::text"
+    },
+    {
+     "name": "xp_reward",
+     "type": "integer",
+     "not_null": true,
+     "default": "10"
+    },
+    {
+     "name": "content",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "lock_version",
+     "type": "integer",
+     "not_null": true,
+     "default": "1"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "lessons_kind",
+     "type": "c",
+     "columns": [
+      "kind"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((kind)::text = ANY ((ARRAY['story'::character varying, 'exercise'::character varying, 'coding'::character varying, 'video'::character varying, 'simulation'::character varying, 'minigame'::character varying])::text[])))"
+    },
+    {
+     "name": "lessons_module_id_fkey",
+     "type": "f",
+     "columns": [
+      "module_id"
+     ],
+     "ref_table": "modules",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lessons_project_id_fkey",
+     "type": "f",
+     "columns": [
+      "project_id"
+     ],
+     "ref_table": "projects",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lessons_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    },
+    {
+     "name": "lessons_position_unique",
+     "type": "u",
+     "columns": [
+      "module_id",
+      "position"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": true,
+     "deferred": true,
+     "definition": "UNIQUE (module_id, \"position\") DEFERRABLE INITIALLY DEFERRED"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lessons_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lessons_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lessons_pkey ON public.lessons USING btree (id)"
+    },
+    {
+     "name": "lessons_position_unique",
+     "unique": true,
+     "primary": false,
+     "constraint": "lessons_position_unique",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lessons_position_unique ON public.lessons USING btree (module_id, \"position\")"
+    },
+    {
+     "name": "lessons_project_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lessons_project_id_index ON public.lessons USING btree (project_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "media",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "project_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "uploader_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "content_type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "byte_size",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lang",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "label",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "media_kind_type",
+     "type": "c",
+     "columns": [
+      "kind",
+      "content_type",
+      "lang",
+      "label"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((((kind)::text = 'video'::text) AND ((content_type)::text = ANY ((ARRAY['video/webm'::character varying, 'video/mp4'::character varying])::text[]))) OR (((kind)::text = 'captions'::text) AND ((content_type)::text = 'text/vtt'::text) AND (lang IS NOT NULL) AND (label IS NOT NULL))))"
+    },
+    {
+     "name": "media_size",
+     "type": "c",
+     "columns": [
+      "byte_size"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((byte_size > 0) AND (byte_size <= 52428800)))"
+    },
+    {
+     "name": "media_project_id_fkey",
+     "type": "f",
+     "columns": [
+      "project_id"
+     ],
+     "ref_table": "projects",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "media_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "media_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "media_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX media_pkey ON public.media USING btree (id)"
+    },
+    {
+     "name": "media_project_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX media_project_id_index ON public.media USING btree (project_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "member_settings",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "share_drafts_with_ai",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "member_settings_pkey",
+     "type": "p",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "member_settings_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "member_settings_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX member_settings_pkey ON public.member_settings USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "modules",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "project_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lock_version",
+     "type": "integer",
+     "not_null": true,
+     "default": "1"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "modules_project_id_fkey",
+     "type": "f",
+     "columns": [
+      "project_id"
+     ],
+     "ref_table": "projects",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "modules_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    },
+    {
+     "name": "modules_position_unique",
+     "type": "u",
+     "columns": [
+      "project_id",
+      "position"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": true,
+     "deferred": true,
+     "definition": "UNIQUE (project_id, \"position\") DEFERRABLE INITIALLY DEFERRED"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "modules_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "modules_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX modules_pkey ON public.modules USING btree (id)"
+    },
+    {
+     "name": "modules_position_unique",
+     "unique": true,
+     "primary": false,
+     "constraint": "modules_position_unique",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX modules_position_unique ON public.modules USING btree (project_id, \"position\")"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_jobs",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('oban_jobs_id_seq'::regclass)"
+    },
+    {
+     "name": "state",
+     "type": "oban_job_state",
+     "not_null": true,
+     "default": "'available'::oban_job_state"
+    },
+    {
+     "name": "queue",
+     "type": "text",
+     "not_null": true,
+     "default": "'default'::text"
+    },
+    {
+     "name": "worker",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "args",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "errors",
+     "type": "jsonb[]",
+     "not_null": true,
+     "default": "ARRAY[]::jsonb[]"
+    },
+    {
+     "name": "attempt",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "max_attempts",
+     "type": "integer",
+     "not_null": true,
+     "default": "20"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "scheduled_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "attempted_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "completed_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "attempted_by",
+     "type": "text[]",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "discarded_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "priority",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "tags",
+     "type": "text[]",
+     "not_null": false,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "meta",
+     "type": "jsonb",
+     "not_null": false,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "cancelled_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "attempt_range",
+     "type": "c",
+     "columns": [
+      "attempt",
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((attempt >= 0) AND (attempt <= max_attempts)))"
+    },
+    {
+     "name": "non_negative_priority",
+     "type": "c",
+     "columns": [
+      "priority"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((priority >= 0)) NOT VALID"
+    },
+    {
+     "name": "positive_max_attempts",
+     "type": "c",
+     "columns": [
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((max_attempts > 0))"
+    },
+    {
+     "name": "queue_length",
+     "type": "c",
+     "columns": [
+      "queue"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128)))"
+    },
+    {
+     "name": "worker_length",
+     "type": "c",
+     "columns": [
+      "worker"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_jobs_args_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_args_index ON public.oban_jobs USING gin (args)"
+    },
+    {
+     "name": "oban_jobs_meta_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta)"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_jobs_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_jobs_pkey ON public.oban_jobs USING btree (id)"
+    },
+    {
+     "name": "oban_jobs_state_cancelled_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_cancelled_at_index ON public.oban_jobs USING btree (state, cancelled_at)"
+    },
+    {
+     "name": "oban_jobs_state_discarded_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_discarded_at_index ON public.oban_jobs USING btree (state, discarded_at)"
+    },
+    {
+     "name": "oban_jobs_state_queue_priority_scheduled_at_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban_jobs USING btree (state, queue, priority, scheduled_at, id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_peers",
+   "columns": [
+    {
+     "name": "name",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "node",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "started_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "oban_peers_pkey",
+     "type": "p",
+     "columns": [
+      "name"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (name)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_peers_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_peers_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_peers_pkey ON public.oban_peers USING btree (name)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "projects",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "owner_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "summary",
+     "type": "text",
+     "not_null": true,
+     "default": "''::text"
+    },
+    {
+     "name": "description",
+     "type": "text",
+     "not_null": true,
+     "default": "''::text"
+    },
+    {
+     "name": "objectives",
+     "type": "text[]",
+     "not_null": true,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "prerequisites",
+     "type": "text[]",
+     "not_null": true,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "audience",
+     "type": "text",
+     "not_null": true,
+     "default": "''::text"
+    },
+    {
+     "name": "level",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'beginner'::character varying"
+    },
+    {
+     "name": "duration_minutes",
+     "type": "integer",
+     "not_null": true,
+     "default": "30"
+    },
+    {
+     "name": "category",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'creative'::character varying"
+    },
+    {
+     "name": "cover",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'forest'::character varying"
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'draft'::character varying"
+    },
+    {
+     "name": "lock_version",
+     "type": "integer",
+     "not_null": true,
+     "default": "1"
+    },
+    {
+     "name": "content_revision",
+     "type": "integer",
+     "not_null": true,
+     "default": "1"
+    },
+    {
+     "name": "attestations",
+     "type": "jsonb",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "attested_revision",
+     "type": "integer",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "attested_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "review_version",
+     "type": "integer",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "submitted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "reviewed_by",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "reviewed_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "review_reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "import_message",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "published_slug",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "published_adventure_id",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "published_version",
+     "type": "integer",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "published_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "projects_category",
+     "type": "c",
+     "columns": [
+      "category"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((category)::text = ANY ((ARRAY['coding'::character varying, 'science'::character varying, 'humanities'::character varying, 'creative'::character varying])::text[])))"
+    },
+    {
+     "name": "projects_cover",
+     "type": "c",
+     "columns": [
+      "cover"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((cover)::text = ANY ((ARRAY['forest'::character varying, 'observatory'::character varying, 'alchemy'::character varying, 'archive'::character varying])::text[])))"
+    },
+    {
+     "name": "projects_level",
+     "type": "c",
+     "columns": [
+      "level"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((level)::text = ANY ((ARRAY['beginner'::character varying, 'intermediate'::character varying, 'advanced'::character varying])::text[])))"
+    },
+    {
+     "name": "projects_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'approved'::character varying, 'published'::character varying])::text[])))"
+    },
+    {
+     "name": "projects_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "projects_owner_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX projects_owner_id_index ON public.projects USING btree (owner_id)"
+    },
+    {
+     "name": "projects_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "projects_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)"
+    },
+    {
+     "name": "projects_status_submitted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX projects_status_submitted_at_index ON public.projects USING btree (status, submitted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "versions",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "project_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "number",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "note",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "''::character varying"
+    },
+    {
+     "name": "source",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "author_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "snapshot",
+     "type": "jsonb",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "versions_source",
+     "type": "c",
+     "columns": [
+      "source"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((source)::text = ANY ((ARRAY['manual'::character varying, 'submission'::character varying, 'restore'::character varying])::text[])))"
+    },
+    {
+     "name": "versions_project_id_fkey",
+     "type": "f",
+     "columns": [
+      "project_id"
+     ],
+     "ref_table": "projects",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "versions_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "versions_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "versions_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX versions_pkey ON public.versions USING btree (id)"
+    },
+    {
+     "name": "versions_project_id_number_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX versions_project_id_number_index ON public.versions USING btree (project_id, number)"
+    }
+   ],
+   "triggers": [
+    {
+     "name": "versions_no_update",
+     "definition": "CREATE TRIGGER versions_no_update BEFORE UPDATE ON public.versions FOR EACH ROW EXECUTE FUNCTION studio_versions_immutable()"
+    }
+   ]
+  }
+ ]
+}

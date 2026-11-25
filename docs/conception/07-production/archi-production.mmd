@@ -1,0 +1,79 @@
+%% Architecture de production PRÉVUE : proxy inverse TLS, conteneurs Docker Compose, volumes, sauvegardes.
+%% @titre Architecture de production prévue — rien n’est déployé : Docker Compose écrit mais jamais exécuté
+%% @legende Trait plein : ce qui EXISTE dans le dépôt (docker-compose.yml, src/Dockerfile, src/docker-entrypoint.sh, src/docker-initdb.sql) mais n’a JAMAIS été exécuté (pas de démon Docker pendant le développement). Pointillés « PRÉVU » : absent du dépôt, à mettre en place avant toute mise en production.
+%% @legende Le code attend déjà un TLS terminé en bordure : web force HTTPS en production (force_ssl, rewrite_on x-forwarded-proto, HSTS), son URL publique est en https sur le port 443 et son cookie est « secure » ; les services internes n’ont pas de TLS (réseau privé). Le proxy devra aussi transmettre l’IP réelle par un en-tête de confiance (limites de débit par IP).
+%% @legende Image : build multi-étapes paramétré par SERVICE (hexpm/elixir 1.20.5, OTP 29.1.2, Debian trixie), release Mix lancée par l’utilisateur app ; l’entrypoint applique les migrations, puis les seeds si SEED_DEMO=true (valeur actuelle du compose : données de démonstration). Le Dockerfile ne compile pas le moteur Rust (pas de cargo) : learning utilise son repli Elixir, sauf binaire fourni par SIM_ENGINE_PATH.
+%% @legende Variables obligatoires en production : SECRET_KEY_BASE, INTERNAL_SECRET (≥ 32 octets), WEB_URL, et les dossiers ACCOUNTS_STORAGE_DIR, SOCIAL_STORAGE_DIR, STUDIO_STORAGE_DIR (le service refuse de démarrer sinon). À choisir et configurer : hébergeur, logiciel du proxy, fournisseur d’e-mail (adaptateur Swoosh), clés Stripe et Anthropic, antivirus clamd, sauvegardes.
+%% @ref Compose docker-compose.yml:1 | MysticLore : les 9 services et PostgreSQL.
+%% @ref Cluster docker-compose.yml:8-10 | CLUSTER_NODES: web@web,accounts@accounts
+%% @ref Base docker-compose.yml:26-30 | image: postgres:17-trixie
+%% @ref Volumes docker-compose.yml:85-89 | studio_data:
+%% @ref Ports docker-compose.yml:48 | ports: ["4003:4003"]   # exposé uniquement pour `stripe listen --forward-to localhost:4003/webhooks/stripe`
+%% @ref Web docker-compose.yml:83 | ports: ["4000:4000"]
+%% @ref Seeds docker-compose.yml:21 | SEED_DEMO: ${SEED_DEMO:-true}
+%% @ref Initdb src/docker-initdb.sql:1-8 | CREATE DATABASE ml_notifications;
+%% @ref Dockerfile src/Dockerfile:3-4 | ARG ELIXIR_IMAGE=hexpm/elixir:1.20.5-erlang-29.1.2-debian-trixie-20261104-slim
+%% @ref Entrypoint src/docker-entrypoint.sh:4-10 | Ecto.Migrator.run(&1, :up, all: true)
+%% @ref TLS src/web/config/prod.exs:5-10 | rewrite_on: [:x_forwarded_proto],
+%% @ref URL src/web/config/runtime.exs:36-38 | url: [host: host, port: 443, scheme: "https"],
+%% @ref Limites docs/LIMITS.md:54 | derrière un proxy, l'IP doit venir d'un en-tête de confiance
+%% @ref Non-testé docs/LIMITS.md:7 | **Docker, Compose, CI GitHub** : écrits mais jamais exécutés
+flowchart LR
+  classDef existe fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef base fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef prevu fill:#ffffff,stroke:#b45309,stroke-width:2px,stroke-dasharray:7 5,color:#7c2d12
+  classDef ext fill:#ffffff,stroke:#6b7280,stroke-width:1.2px,stroke-dasharray:4 4,color:#374151
+
+  NAV["<b>Navigateurs</b><br/>Internet, HTTPS"]:::ext
+  STRIPE["<b>Stripe</b><br/>webhooks signés"]:::ext
+
+  subgraph HOTE["Hôte de production — PRÉVU (à choisir), rien n’est déployé"]
+    PROXY["<b>Proxy inverse TLS</b> — PRÉVU, absent du dépôt<br/>certificat, HTTPS → HTTP interne<br/>X-Forwarded-Proto et IP du client<br/>/webhooks/stripe → billing:4003"]:::prevu
+
+    subgraph COMPOSE["docker-compose.yml — écrit, JAMAIS exécuté — réseau Compose privé, cluster Erlang nommé"]
+      WEB["<b>web</b> :4000<br/>port publié 4000:4000"]:::existe
+      ACC["<b>accounts</b> :4001"]:::existe
+      LRN["<b>learning</b> :4002"]:::existe
+      BIL["<b>billing</b> :4003<br/>port publié 4003:4003<br/>pour stripe listen"]:::existe
+      SOC["<b>social</b> :4004"]:::existe
+      MUL["<b>multiplayer</b> :4005"]:::existe
+      COM["<b>community</b> :4006"]:::existe
+      STU["<b>studio</b> :4007"]:::existe
+      NOT["<b>notifications</b> :4008"]:::existe
+      DB[("<b>db</b> — postgres:17-trixie<br/>8 bases ml_‹service›<br/>docker-initdb.sql")]:::base
+    end
+
+    subgraph VOL["Volumes nommés Docker"]
+      V1[("pgdata<br/>/var/lib/postgresql/data")]:::base
+      V2[("accounts_data<br/>/data/accounts — avatars")]:::base
+      V3[("social_data<br/>/data/social — pièces jointes")]:::base
+      V4[("studio_data<br/>/data/studio — images, médias")]:::base
+    end
+
+    BACKUP["<b>Sauvegardes</b> — PRÉVU, non configuré<br/>pg_dump des 8 bases + copie des 3 volumes<br/>de fichiers, hors de l’hôte, restauration testée"]:::prevu
+  end
+
+  subgraph EXTS["Fournisseurs externes — à configurer"]
+    IA["Anthropic<br/>ANTHROPIC_API_KEY"]:::ext
+    SMTP["Fournisseur d’e-mail<br/>adaptateur Swoosh à choisir"]:::ext
+    CLAM["clamd ClamAV<br/>CLAMD_HOST, facultatif"]:::ext
+  end
+
+  NAV -->|"HTTPS 443"| PROXY
+  STRIPE -->|"HTTPS"| PROXY
+  PROXY -->|"HTTP"| WEB
+  PROXY -.->|"HTTP, PRÉVU"| BIL
+  WEB -->|"HTTP + jeton HMAC"| ACC & LRN & BIL & SOC & MUL & COM & STU & NOT
+  ACC & LRN & BIL & SOC & MUL & COM & STU & NOT -->|"DATABASE_URL"| DB
+  DB --- V1
+  ACC --- V2
+  SOC --- V3
+  STU --- V4
+  V1 -.-> BACKUP
+  V2 -.-> BACKUP
+  V3 -.-> BACKUP
+  V4 -.-> BACKUP
+  STU -->|"HTTPS"| IA
+  ACC -->|"SMTP ou API"| SMTP
+  SOC -->|"TCP INSTREAM"| CLAM
+  BIL -->|"HTTPS api.stripe.com"| STRIPE

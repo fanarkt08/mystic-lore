@@ -1,0 +1,258 @@
+/* Multijoueur : composants propres aux salons et aux parties (les classes de app.css d'abord). */
+
+@layer components {
+  /* ---------- pages ---------- */
+  .mp-columns,
+  .mp-layout {
+    display: grid;
+    gap: 24px;
+  }
+  /* Lobby: on small screens the two columns melt into one list ordered for reading (chat before host tools). */
+  .mp-col {
+    display: contents;
+  }
+  .mp-layout #game {
+    order: 1;
+  }
+  .mp-layout #ready-check {
+    order: 2;
+  }
+  .mp-layout #members {
+    order: 3;
+  }
+  .mp-layout #chat {
+    order: 4;
+  }
+  .mp-layout #host-tools {
+    order: 5;
+  }
+  @media (min-width: 1024px) {
+    .mp-columns {
+      grid-template-columns: minmax(0, 1fr) 22rem;
+      align-items: start;
+    }
+    .mp-layout {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      align-items: start;
+    }
+    .mp-col {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 24px;
+    }
+  }
+  @media (min-width: 1280px) {
+    .mp-layout {
+      grid-template-columns: minmax(0, 1fr) 24rem;
+    }
+  }
+
+  .mp-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    transition: border-color 0.2s;
+  }
+  .mp-card:hover {
+    border-color: color-mix(in srgb, var(--color-magic) 60%, transparent);
+  }
+
+  /* ---------- players & turns ---------- */
+  .mp-member {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-block: 12px;
+  }
+  .mp-turns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .mp-turn {
+    display: flex;
+    min-height: 46px;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+    font-size: 0.875rem;
+  }
+  .mp-turn-current {
+    border-color: var(--color-info);
+    box-shadow: inset 3px 0 0 var(--color-info);
+  }
+
+  .mp-hints {
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-reward) 40%, transparent);
+    border-radius: var(--radius-card);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--color-reward) 10%, transparent), var(--color-raised) 65%);
+  }
+  .mp-hints > * + * {
+    margin-top: 8px;
+  }
+
+  /* ---------- runes ---------- */
+  .rune-face {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+  /* colonne étroite (historique des essais, 5 colonnes) : le nom passe sous l'icône au lieu de déborder sur la bordure
+     colorée de la case (contraste mesuré à 3,7:1 là où le texte la traversait) */
+  .rune-face > span:not([class*="hero-"]) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .rune-face > [class*="hero-"] {
+    color: var(--rune-tone, var(--color-magic));
+  }
+  .rune-tone-0 {
+    --rune-tone: #ff9f7a;
+  }
+  .rune-tone-1 {
+    --rune-tone: #edca85;
+  }
+  .rune-tone-2 {
+    --rune-tone: #b9c6e8;
+  }
+  .rune-tone-3 {
+    --rune-tone: #c8b89a;
+  }
+  .rune-tone-4 {
+    --rune-tone: #ffd86b;
+  }
+  .rune-tone-5 {
+    --rune-tone: #ad8bff;
+  }
+  .rune-tone-6 {
+    --rune-tone: #74e6e2;
+  }
+  .rune-tone-7 {
+    --rune-tone: #8fe0b5;
+  }
+
+  .rune-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  @media (min-width: 640px) {
+    .rune-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .rune {
+    display: flex;
+    min-height: 56px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      transform 0.15s;
+  }
+  .rune:hover {
+    border-color: var(--color-line-strong);
+  }
+  .rune:active {
+    transform: translateY(1px);
+  }
+  .rune[aria-pressed="true"] {
+    border-color: var(--color-magic);
+    background: color-mix(in srgb, var(--color-action) 18%, transparent);
+  }
+  .rune-slot {
+    font-size: 0.75rem;
+    color: var(--color-magic);
+  }
+
+  /* ---------- attempts ---------- */
+  .mp-attempt {
+    padding: 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+  }
+  .mp-marks {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  @media (min-width: 1280px) {
+    .mp-marks {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  .mp-mark {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+  }
+  .mp-mark-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+  }
+  .mp-mark-hit {
+    border-color: color-mix(in srgb, var(--color-success) 55%, transparent);
+  }
+  .mp-mark-hit .mp-mark-label {
+    color: var(--color-success);
+  }
+  .mp-mark-present {
+    border-color: color-mix(in srgb, var(--color-reward) 55%, transparent);
+  }
+  .mp-mark-present .mp-mark-label {
+    color: var(--color-reward);
+  }
+  .mp-mark-miss .mp-mark-label {
+    color: var(--color-muted);
+  }
+
+  /* ---------- chat ---------- */
+  .mp-chat-log {
+    display: flex;
+    max-height: 22rem;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .mp-chat-line {
+    padding-bottom: 8px;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
+    font-size: 0.9375rem;
+  }
+}

@@ -1,0 +1,55 @@
+%% Cas d'utilisation — écrans 2 « catalogue », 3 « tableau de bord », 4 « lecteur de leçon », 7 « profil » (badges), et leçons hors ligne.
+%% @titre Cas d’utilisation — Apprentissage : catalogue, tableau de bord, lecteur de leçon, profil et badges (écrans 2, 3, 4, 7)
+%% @legende La correction est toujours faite par le serveur (learning), y compris pour une réponse donnée hors ligne, rejouée à la synchronisation avec sa clé d’idempotence. L’XP d’une leçon est accordée une seule fois (voir la séquence c).
+%% @legende Aventures premium et leçons hors ligne : formule effective premium ou vip, relue chez billing ; une copie hors ligne expire après 14 jours au plus, jamais après la fin de la période payée.
+%% @ref Catalogue src/web/lib/web_web/live/adventure_live/index.ex:31 | def handle_event("filter"
+%% @ref Inscrire src/web/lib/web_web/live/adventure_live/show.ex:26 | def handle_event("enroll"
+%% @ref Tableau src/web/lib/web_web/router.ex:94 | live "/dashboard", DashboardLive
+%% @ref Lire src/web/lib/web_web/live/learn_live.ex:101 | def handle_event("complete"
+%% @ref Répondre src/web/lib/web_web/live/learn_live.ex:118 | def handle_event("check"
+%% @ref Simuler src/web/lib/web_web/live/learn_live.ex:158 | def handle_event("simulate"
+%% @ref Notes src/web/lib/web_web/live/learn_live.ex:256 | def handle_event("save_notes"
+%% @ref Badges src/web/lib/web_web/live/gamification/achievements_live.ex:32-38 | def handle_event("equip"
+%% @ref Hors-ligne src/web/lib/web_web/router.ex:38-42 | get "/packages/:lesson_id", OfflineController, :package
+%% @ref Premium src/learning/lib/learning/entitlements.ex:15-23 | {:ok, false} -> {:error, :premium_required}
+usecase-beta
+  direction LR
+  actor Visiteur
+  actor Membre
+  actor Premium(Membre Premium)
+  systemBoundary sys(MysticLore — apprentissage)
+    CAT(Parcourir et filtrer le catalogue)
+    DET(Consulter le détail d’une aventure)
+    INS(S’inscrire à une aventure)
+    TDB(Consulter son tableau de bord : niveau, série, quêtes)
+    LEC(Suivre une leçon : récit, vidéo, simulation, mini-jeu)
+    REP(Répondre à un exercice)
+    CORR(Faire corriger la réponse par le serveur)
+    XP(Gagner l’XP de la leçon, une seule fois)
+    NOTE(Prendre des notes et garder un brouillon)
+    BADGE(Équiper jusqu’à 3 badges)
+    PROF(Consulter sa fiche d’académie)
+    PREMA(Accéder à une aventure premium)
+    OFF(Rendre une leçon disponible hors ligne)
+    SYNC(Synchroniser les réponses données hors ligne)
+  end
+  Visiteur -- CAT
+  Visiteur -- DET
+  Membre -- CAT
+  Membre -- DET
+  Membre -- INS
+  Membre -- TDB
+  Membre -- LEC
+  Membre -- REP
+  Membre -- NOTE
+  Membre -- BADGE
+  Membre -- PROF
+  Premium -- PREMA
+  Premium -- OFF
+  Premium -- SYNC
+  REP ..>:include CORR
+  XP ..>:extend REP
+  SYNC ..>:include CORR
+  PREMA ..>:extend LEC
+  note for XP si la réponse est juste et que l’XP n’a pas déjà été accordée
+  note for OFF récits et quiz premium ; copie sans la solution, gardée par le navigateur

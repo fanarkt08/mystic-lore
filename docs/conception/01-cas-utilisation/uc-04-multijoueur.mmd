@@ -1,0 +1,55 @@
+%% Cas d'utilisation — écran 5 « multijoueur The Rune Relay ».
+%% @titre Cas d’utilisation — Multijoueur « The Rune Relay » (écran 5)
+%% @legende Coopératif de 2 à 4 joueurs : retrouver une séquence secrète de 5 runes en 6 tentatives, chacun ayant des indices privés. Le serveur (MatchServer) valide chaque tentative ; une victoire rapporte 50 XP à chaque participant présent, versées par learning.
+%% @legende Les cas notés « hôte » sont réservés au membre qui héberge le salon (rôle recalculé à chaque requête, l’hôte peut être transféré). Les signalements de joueurs sont transmis à social, au nom du membre.
+%% @ref Salons src/web/lib/web_web/live/multiplayer/index_live.ex:51 | def handle_event("create"
+%% @ref Rejoindre src/web/lib/web_web/live/multiplayer/lobby_live.ex:149 | def handle_event("join"
+%% @ref Inviter src/web/lib/web_web/live/multiplayer/lobby_live.ex:222-225 | def handle_event("invite"
+%% @ref Lien src/web/lib/web_web/live/multiplayer/join_live.ex:31 | def handle_event("join"
+%% @ref Prêt src/web/lib/web_web/live/multiplayer/lobby_live.ex:200-203 | def handle_event("start"
+%% @ref Proposer src/web/lib/web_web/live/multiplayer/lobby_live.ex:295 | def handle_event("propose"
+%% @ref Discuter src/web/lib/web_web/live/multiplayer/lobby_live.ex:249 | def handle_event("send"
+%% @ref Hôte src/web/lib/web_web/live/multiplayer/lobby_live.ex:205-219 | def handle_event("approve"
+%% @ref Signaler src/web/lib/web_web/live/multiplayer/lobby_live.ex:312 | def handle_event("submit_report"
+%% @ref Permission src/multiplayer/lib/multiplayer/social.ex:1-51 | can-contact
+%% @ref XP src/multiplayer/lib/multiplayer/rewards.ex:1-126 | /api/internal/xp
+usecase-beta
+  direction LR
+  actor Membre
+  systemBoundary sys(MysticLore — The Rune Relay)
+    LIST(Parcourir les salons ouverts)
+    CREE(Créer un salon ouvert, privé ou programmé)
+    REJ(Rejoindre un salon)
+    APPRO(Demander l’approbation de l’hôte)
+    INVR(Répondre à une invitation)
+    LIEN(Rejoindre par un lien d’invitation)
+    INV(Inviter un ami)
+    PERM(Vérifier la permission de contact)
+    GLIEN(Créer ou révoquer un lien d’invitation)
+    HOTE(Gérer le salon : approuver, exclure, transférer)
+    PRET(Se déclarer prêt)
+    LANCE(Lancer la partie)
+    PROP(Proposer une séquence de 5 runes)
+    VICT(Recevoir 50 XP de victoire)
+    CHAT(Discuter dans le salon)
+    SIG(Signaler un joueur)
+  end
+  Membre -- LIST
+  Membre -- CREE
+  Membre -- REJ
+  Membre -- INVR
+  Membre -- LIEN
+  Membre -- INV
+  Membre -- GLIEN
+  Membre -- HOTE
+  Membre -- PRET
+  Membre -- LANCE
+  Membre -- PROP
+  Membre -- CHAT
+  Membre -- SIG
+  APPRO ..>:extend REJ
+  INV ..>:include PERM
+  VICT ..>:extend PROP
+  note for APPRO si le salon exige l’approbation, sauf invitation
+  note for HOTE hôte seulement ; INV, GLIEN, LANCE aussi
+  note for VICT si la séquence est trouvée ; chaque joueur présent

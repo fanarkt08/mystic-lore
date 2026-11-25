@@ -1,0 +1,163 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_studio_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_studio_dev (service studio) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 4 migrations appliquées, dernière : 20261124100000) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques oban_jobs, oban_peers, schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_studio_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • collaborators — collaborators_role : role IN ('editor', 'viewer')
+%% @legende • generations — generations_credits : credits IN ('reserved', 'consumed', 'released')
+%% @legende • generations — generations_kind : kind IN ('outline', 'lesson_draft', 'feedback', 'image')
+%% @legende • generations — generations_status : status IN ('pending', 'running', 'succeeded', 'failed', 'cancelled')
+%% @legende • images — images_size : (byte_size > 0) AND (byte_size <= 2097152)
+%% @legende • images — images_source : source IN ('upload', 'demo')
+%% @legende • images — images_type : content_type IN ('image/png', 'image/jpeg', 'image/webp', 'image/svg+xml')
+%% @legende • lessons — lessons_kind : kind IN ('story', 'exercise', 'coding', 'video', 'simulation', 'minigame')
+%% @legende • media — media_kind_type : ((kind = 'video') AND (content_type IN ('video/webm', 'video/mp4'))) OR ((kind = 'captions') AND (content_type = 'text/vtt') AND (lang IS NOT NULL) AND (label IS NOT NULL))
+%% @legende • media — media_size : (byte_size > 0) AND (byte_size <= 52428800)
+%% @legende • projects — projects_category : category IN ('coding', 'science', 'humanities', 'creative')
+%% @legende • projects — projects_cover : cover IN ('forest', 'observatory', 'alchemy', 'archive')
+%% @legende • projects — projects_level : level IN ('beginner', 'intermediate', 'advanced')
+%% @legende • projects — projects_status : status IN ('draft', 'submitted', 'approved', 'published')
+%% @legende • versions — versions_source : source IN ('manual', 'submission', 'restore')
+%% @legende Déclencheurs :
+%% @legende • versions — versions_no_update (BEFORE UPDATE, studio_versions_immutable()) : refuse toute modification d'une version (instantanés immuables)
+erDiagram
+  direction LR
+  collaborators {
+    uuid id PK
+    uuid project_id FK, UK "NN · → projects.id CASCADE · UQ (project_id, user_id)"
+    uuid user_id UK "NN · UQ (project_id, user_id) · ⇢ accounts.users"
+    varchar(255) username "NN"
+    varchar(255) role "NN"
+    uuid invited_by "NN · ⇢ accounts.users"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  generations {
+    uuid id PK
+    uuid project_id FK "NN · → projects.id CASCADE"
+    uuid lesson_id FK "→ lessons.id SET NULL"
+    uuid user_id "NN · ⇢ accounts.users"
+    varchar(255) kind "NN"
+    varchar(255) status "NN · déf. 'pending'"
+    integer cost "NN"
+    varchar(255) provider "NN"
+    varchar(255) model
+    text brief "NN"
+    jsonb result
+    varchar(255) error
+    varchar(255) credits "NN · déf. 'reserved'"
+    uuid retry_of "⇢ generations"
+    timestamp(0) applied_at
+    timestamp(0) started_at
+    timestamp(0) finished_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  images {
+    uuid id PK
+    uuid project_id FK "NN · → projects.id CASCADE"
+    uuid lesson_id FK "→ lessons.id SET NULL"
+    uuid uploader_id "NN · ⇢ accounts.users"
+    text alt "NN · déf. ''"
+    varchar(255) content_type "NN"
+    integer byte_size "NN"
+    varchar(255) source "NN"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  lessons {
+    uuid id PK
+    uuid project_id FK "NN · → projects.id CASCADE"
+    uuid module_id FK, UK "NN · → modules.id CASCADE · UQ (module_id, position) DEFERRABLE INITIALLY DEFERRED"
+    integer position UK "NN · UQ (module_id, position) DEFERRABLE INITIALLY DEFERRED"
+    varchar(255) title "NN"
+    varchar(255) kind "NN"
+    text body "NN · déf. ''"
+    integer xp_reward "NN · déf. 10"
+    jsonb content "NN · déf. '{}'"
+    integer lock_version "NN · déf. 1"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  media {
+    uuid id PK
+    uuid project_id FK "NN · → projects.id CASCADE"
+    uuid uploader_id "NN · ⇢ accounts.users"
+    varchar(255) kind "NN"
+    varchar(255) content_type "NN"
+    integer byte_size "NN"
+    varchar(255) lang
+    varchar(255) label
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  member_settings {
+    uuid user_id PK "⇢ accounts.users"
+    boolean share_drafts_with_ai "NN · déf. false"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  modules {
+    uuid id PK
+    uuid project_id FK, UK "NN · → projects.id CASCADE · UQ (project_id, position) DEFERRABLE INITIALLY DEFERRED"
+    integer position UK "NN · UQ (project_id, position) DEFERRABLE INITIALLY DEFERRED"
+    varchar(255) title "NN"
+    integer lock_version "NN · déf. 1"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  projects {
+    uuid id PK
+    uuid owner_id "⇢ accounts.users"
+    varchar(255) title "NN"
+    text summary "NN · déf. ''"
+    text description "NN · déf. ''"
+    text[] objectives "NN · déf. ARRAY[]"
+    text[] prerequisites "NN · déf. ARRAY[]"
+    text audience "NN · déf. ''"
+    varchar(255) level "NN · déf. 'beginner'"
+    integer duration_minutes "NN · déf. 30"
+    varchar(255) category "NN · déf. 'creative'"
+    varchar(255) cover "NN · déf. 'forest'"
+    varchar(255) status "NN · déf. 'draft'"
+    integer lock_version "NN · déf. 1"
+    integer content_revision "NN · déf. 1"
+    jsonb attestations
+    integer attested_revision
+    timestamp(0) attested_at
+    integer review_version
+    timestamp(0) submitted_at
+    uuid reviewed_by "⇢ accounts.users"
+    timestamp(0) reviewed_at
+    text review_reason
+    text import_message
+    varchar(255) published_slug
+    varchar(255) published_adventure_id "⇢ learning.adventures (texte)"
+    integer published_version
+    timestamp(0) published_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  versions {
+    uuid id PK
+    uuid project_id FK, UK "NN · → projects.id CASCADE · UQ (project_id, number)"
+    integer number UK "NN · UQ (project_id, number)"
+    varchar(255) note "NN · déf. ''"
+    varchar(255) source "NN"
+    uuid author_id "NN · ⇢ accounts.users"
+    jsonb snapshot "NN"
+    timestamp(0) inserted_at "NN"
+  }
+  projects ||..o{ collaborators : "project_id"
+  lessons |o..o{ generations : "lesson_id"
+  projects ||..o{ generations : "project_id"
+  lessons |o..o{ images : "lesson_id"
+  projects ||..o{ images : "project_id"
+  modules ||..o{ lessons : "module_id"
+  projects ||..o{ lessons : "project_id"
+  projects ||..o{ media : "project_id"
+  projects ||..o{ modules : "project_id"
+  projects ||..o{ versions : "project_id"

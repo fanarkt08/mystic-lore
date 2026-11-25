@@ -1,0 +1,5 @@
+# HTTPS automatique (Let's Encrypt) devant web ; LiveView passe par le WebSocket proxifié.
+{$PHX_HOST} {
+	encode zstd gzip
+	reverse_proxy web:4000
+}

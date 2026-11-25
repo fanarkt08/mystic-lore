@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Vérifie le format, compile sans avertissement et lance les tests de chaque projet (et du moteur Rust si cargo est là).
+set -u
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export DB_USER="${DB_USER:-$(whoami)}" DB_PASSWORD="${DB_PASSWORD:-}"
+status=0
+for s in shared accounts learning billing social multiplayer community studio notifications web; do
+  echo "==== $s"
+  (cd "$ROOT/src/$s" && mix format --check-formatted && MIX_ENV=test mix compile --warnings-as-errors && mix test) || { echo "!!!! ÉCHEC : $s"; status=1; }
+done
+echo "==== learning/native/sim_engine (Rust, optionnel)"
+if command -v cargo >/dev/null 2>&1; then
+  (cd "$ROOT/src/learning/native/sim_engine" && cargo test --offline --quiet) || { echo "!!!! ÉCHEC : sim_engine"; status=1; }
+else
+  echo "cargo absent : crate non testé (moteur optionnel, repli Elixir)"
+fi
+[ $status -eq 0 ] && echo "TOUT EST VERT" || echo "DES ÉCHECS (voir ci-dessus)"
+exit $status

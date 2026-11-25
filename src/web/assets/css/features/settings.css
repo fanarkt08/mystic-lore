@@ -1,0 +1,151 @@
+/* Paramètres découpés en sections (MysticWeb.SettingsLive) et profil enrichi (MysticWeb.ProfileComponents).
+   Sous-navigation : liste en tête de page sur mobile, barre latérale collante à partir de 1024 px. */
+@layer components {
+  .settings-layout {
+    display: grid;
+    gap: 24px;
+  }
+  @media (min-width: 1024px) {
+    .settings-layout {
+      grid-template-columns: 15rem minmax(0, 1fr);
+      align-items: start;
+      gap: 32px;
+    }
+    .settings-nav {
+      position: sticky;
+      top: 24px;
+    }
+  }
+  .settings-nav ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 4px;
+  }
+  @media (min-width: 1024px) {
+    .settings-nav ul {
+      grid-template-columns: 1fr;
+    }
+  }
+  .settings-nav-link {
+    display: flex;
+    min-height: 46px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+  @media (min-width: 1024px) {
+    .settings-nav-link {
+      border-color: transparent;
+    }
+  }
+  .settings-nav-link:hover {
+    background: var(--color-raised);
+    color: var(--color-ink);
+  }
+  .settings-nav-link[aria-current="page"] {
+    border-color: color-mix(in srgb, var(--color-magic) 50%, transparent);
+    background: color-mix(in srgb, var(--color-action) 18%, transparent);
+    color: var(--color-ink);
+  }
+
+  .choice-grid {
+    display: grid;
+    gap: 8px;
+  }
+  @media (min-width: 640px) {
+    .choice-grid {
+      grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    }
+  }
+  .choice-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .save-status {
+    min-height: 1.5em;
+    font-size: 0.9375rem;
+  }
+
+  /* aperçus des choix : couvertures, blasons, thèmes */
+  .cover-swatch {
+    width: 64px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 6px;
+  }
+  .crest-swatch {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+  .theme-swatch {
+    display: inline-grid;
+    width: 44px;
+    height: 32px;
+    flex-shrink: 0;
+    grid-template-columns: 2fr 1fr;
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+  }
+  .theme-swatch::before,
+  .theme-swatch::after {
+    content: "";
+  }
+  .theme-swatch-system::before { background: #f6f4fb; }
+  .theme-swatch-system::after { background: #090e20; }
+  .theme-swatch-light::before { background: #f6f4fb; }
+  .theme-swatch-light::after { background: #5a36d1; }
+  .theme-swatch-dark::before { background: #090e20; }
+  .theme-swatch-dark::after { background: #7954e8; }
+  .theme-swatch-grove::before { background: #06130e; }
+  .theme-swatch-grove::after { background: #8fe0bd; }
+  .theme-swatch-ember::before { background: #150a08; }
+  .theme-swatch-ember::after { background: #f5c76b; }
+  .theme-swatch-parchment::before { background: #f3ead5; }
+  .theme-swatch-parchment::after { background: #7a3410; }
+
+  /* carte de profil (page membre et aperçu) */
+  .profile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+  }
+  .profile-cover {
+    height: 112px;
+    margin: -16px -16px 0;
+  }
+  @media (min-width: 768px) {
+    .profile-cover {
+      height: 144px;
+      margin: -24px -24px 0;
+    }
+  }
+  /* l'avatar chevauche le bas de la couverture ; le nom commence sous elle */
+  .profile-head {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px 20px;
+    margin-top: -36px;
+  }
+  .profile-head .avatar {
+    box-shadow: 0 0 0 4px var(--color-surface);
+  }
+  .profile-names {
+    padding-top: 40px;
+  }
+  .preview-frame {
+    padding: 12px;
+    border: 1px dashed var(--color-line-strong);
+    border-radius: var(--radius-panel);
+  }
+}

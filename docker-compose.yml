@@ -1,0 +1,89 @@
+# MysticLore : les 9 services et PostgreSQL.
+#   cp .env.example .env && docker compose up --build      → http://localhost:4000
+x-service: &service
+  build: { context: ./src, dockerfile: Dockerfile }
+  restart: unless-stopped
+  env_file: [.env]
+  environment: &env
+    RELEASE_DISTRIBUTION: name
+    RELEASE_COOKIE: ${ERL_COOKIE:-mysticlore-compose-cookie}
+    CLUSTER_NODES: web@web,accounts@accounts,learning@learning,billing@billing,social@social,multiplayer@multiplayer,community@community,studio@studio,notifications@notifications
+    ACCOUNTS_URL: http://accounts:4001
+    LEARNING_URL: http://learning:4002
+    BILLING_URL: http://billing:4003
+    SOCIAL_URL: http://social:4004
+    MULTIPLAYER_URL: http://multiplayer:4005
+    COMMUNITY_URL: http://community:4006
+    STUDIO_URL: http://studio:4007
+    NOTIFICATIONS_URL: http://notifications:4008
+    WEB_URL: ${WEB_URL:-http://localhost:4000}
+    PHX_HOST: ${PHX_HOST:-localhost}
+    SEED_DEMO: ${SEED_DEMO:-true}
+  depends_on:
+    db: { condition: service_healthy }
+
+services:
+  db:
+    image: postgres:17-trixie
+    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres }
+    volumes: [pgdata:/var/lib/postgresql/data, ./src/docker-initdb.sql:/docker-entrypoint-initdb.d/init.sql:ro]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U postgres"], interval: 5s, retries: 20 }
+
+  accounts:
+    <<: *service
+    hostname: accounts
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: accounts } }
+    environment: { <<: *env, RELEASE_NODE: accounts@accounts, PORT: "4001", REPO: MlAccounts.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_accounts, ACCOUNTS_STORAGE_DIR: /data/accounts }
+    volumes: [accounts_data:/data/accounts]
+  learning:
+    <<: *service
+    hostname: learning
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: learning } }
+    environment: { <<: *env, RELEASE_NODE: learning@learning, PORT: "4002", REPO: MlLearning.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_learning }
+  billing:
+    <<: *service
+    hostname: billing
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: billing } }
+    environment: { <<: *env, RELEASE_NODE: billing@billing, PORT: "4003", REPO: MlBilling.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_billing }
+    ports: ["4003:4003"]   # exposé uniquement pour `stripe listen --forward-to localhost:4003/webhooks/stripe`
+  social:
+    <<: *service
+    hostname: social
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: social } }
+    environment: { <<: *env, RELEASE_NODE: social@social, PORT: "4004", REPO: MlSocial.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_social, SOCIAL_STORAGE_DIR: /data/social }
+    volumes: [social_data:/data/social]
+  multiplayer:
+    <<: *service
+    hostname: multiplayer
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: multiplayer } }
+    environment: { <<: *env, RELEASE_NODE: multiplayer@multiplayer, PORT: "4005", REPO: MlMultiplayer.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_multiplayer }
+  community:
+    <<: *service
+    hostname: community
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: community } }
+    environment: { <<: *env, RELEASE_NODE: community@community, PORT: "4006", REPO: MlCommunity.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_community }
+  studio:
+    <<: *service
+    hostname: studio
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: studio } }
+    environment: { <<: *env, RELEASE_NODE: studio@studio, PORT: "4007", REPO: MlStudio.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_studio, STUDIO_STORAGE_DIR: /data/studio }
+    volumes: [studio_data:/data/studio]
+  # centre de notifications : aucune adresse e-mail stockée (envoi demandé à accounts)
+  notifications:
+    <<: *service
+    hostname: notifications
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: notifications } }
+    environment: { <<: *env, RELEASE_NODE: notifications@notifications, PORT: "4008", REPO: MlNotifications.Repo, DATABASE_URL: ecto://postgres:postgres@db/ml_notifications }
+  web:
+    <<: *service
+    hostname: web
+    build: { context: ./src, dockerfile: Dockerfile, args: { SERVICE: web } }
+    environment: { <<: *env, RELEASE_NODE: web@web, PORT: "4000" }
+    depends_on: [accounts, learning, billing, social, multiplayer, community, studio, notifications]
+    ports: ["4000:4000"]
+
+volumes:
+  pgdata:
+  accounts_data:
+  social_data:
+  studio_data:

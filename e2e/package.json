@@ -1,0 +1,19 @@
+{
+  "name": "mysticlore-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Parcours de bout en bout dans un vrai navigateur (Chrome local, playwright-core : aucun navigateur téléchargé) ; audit d'accessibilité avec axe-core (MPL-2.0), exécuté localement ; schémas de conception (docs/conception) rendus localement avec Mermaid (MIT), sans service en ligne",
+  "scripts": {
+    "journeys": "node journeys.mjs",
+    "responsive": "node responsive.mjs",
+    "a11y": "node a11y.mjs",
+    "keyboard": "node keyboard.mjs",
+    "i18n": "node i18n.mjs",
+    "conception": "node tools/conception.mjs"
+  },
+  "dependencies": {
+    "axe-core": "4.14.1",
+    "mermaid": "12.3.0",
+    "playwright-core": "^1"
+  }
+}

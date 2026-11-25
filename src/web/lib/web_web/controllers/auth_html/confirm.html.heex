@@ -1,0 +1,30 @@
+<.auth_shell
+  flash={@flash}
+  eyebrow={gettext("Email confirmation")}
+  title={gettext("Confirm your account")}
+>
+  <%= cond do %>
+    <% @error == :invalid -> %>
+      <.access_state
+        id="confirm-invalid"
+        icon="hero-link-slash"
+        title={gettext("This link can't be used")}
+      >
+        {gettext(
+          "The confirmation link is invalid, was already used, or has expired (links last 7 days). Ask for a new one below; if your account is already confirmed, just log in."
+        )}
+        <:actions>
+          <.button href={~p"/login"} variant="ghost">{gettext("Go to log in")}</.button>
+        </:actions>
+      </.access_state>
+      <.resend_form id="confirm-resend" label={gettext("Send a new link")} />
+    <% true -> %>
+      <.notice :if={@error} id="confirm-error" kind="warning" role="alert">{@error}</.notice>
+      <p class="text-muted">
+        {gettext("Confirm that this email address is yours to activate your MysticLore account.")}
+      </p>
+      <.form for={%{}} action={~p"/confirm/#{@token}"} id="confirm-form">
+        <.button type="submit" class="w-full">{gettext("Confirm my account")}</.button>
+      </.form>
+  <% end %>
+</.auth_shell>

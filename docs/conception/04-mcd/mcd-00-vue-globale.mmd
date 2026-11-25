@@ -1,0 +1,58 @@
+%% MCD — vue globale regroupée par service : une base par service, et les références d'une base à l'autre (jamais de clé étrangère).
+%% @titre MCD — vue globale par service : 8 bases séparées et références entre bases (sans clé étrangère)
+%% @legende Chaque cadre est un service et SA base PostgreSQL ; seules les entités qui portent une référence vers une autre base sont montrées (le détail de chaque domaine est dans mcd-‹service›). Toutes les flèches pointillées sont des références LOGIQUES : la valeur (un UUID ou un texte) est stockée, mais aucune base ne peut déclarer de clé étrangère vers une autre ; la cohérence est tenue par le code (appels HTTP signés, suppression orchestrée par accounts).
+%% @legende MEMBRE (accounts.users) est référencé par les 7 autres bases (user_id, author_id, owner_id, host_id, sender_id, actor_id…). Références par texte : ref « studio:gen:‹id› » d’une écriture de crédits, ref_key « multiplayer:match:‹id› » d’un gain d’XP, chemin « /media/studio/‹id› » dans le contenu d’une leçon vidéo importée.
+%% @legende Non dessinés (texte libre désignant un objet de n’importe quel service) : notifications.subject_type + subject_id, audit_entries.target_type + target_id (accounts), deletion_steps.service (nom du service dont l’étape de suppression a réussi).
+%% @ref Membre src/learning/priv/repo/migrations/20261123134433_create_learning.exs:72 | user_id : identifiant du service accounts (pas de clé étrangère inter-bases).
+%% @ref Sanction src/social/lib/social/moderation.ex:204 | sanction_id: outcome.meta["sanction_id"]
+%% @ref Import src/learning/lib/learning/importer.ex:78 | external_id: data.external_id
+%% @ref Publication src/studio/lib/studio/publishing.ex:321 | published_adventure_id: to_string(body["adventure_id"]),
+%% @ref Crédits src/studio/lib/studio/ai/generation.ex:30 | "studio:gen:" <> id
+%% @ref Victoire src/multiplayer/lib/multiplayer/rewards.ex:91 | ref_key: "multiplayer:match:#{reward.match_id}",
+%% @ref Vidéo src/learning/lib/learning/importer.ex:405 | "src" => "/media/studio/" <> video_id,
+%% @ref Suppression src/accounts/lib/accounts/privacy.ex:42 | @deletion_services [
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+
+  subgraph ACC["accounts — base ml_accounts"]
+    A_MEMBRE["<b>MEMBRE</b><br/><i>users</i>"]:::entite
+    A_SANCTION["<b>SANCTION</b><br/><i>sanctions</i>"]:::entite
+  end
+  subgraph LRN["learning — base ml_learning"]
+    L_AVENTURE["<b>AVENTURE</b><br/><i>adventures</i>"]:::entite
+    L_LECON["<b>LEÇON</b><br/><i>lessons</i>"]:::entite
+    L_GAIN["<b>GAIN_XP</b><br/><i>xp_events</i>"]:::entite
+  end
+  subgraph BIL["billing — base ml_billing"]
+    B_ECRITURE["<b>ÉCRITURE DE CRÉDITS</b><br/><i>credit_entries</i>"]:::entite
+  end
+  subgraph SOC["social — base ml_social"]
+    S_SIG["<b>SIGNALEMENT</b><br/><i>reports</i>"]:::entite
+  end
+  subgraph MUL["multiplayer — base ml_multiplayer"]
+    M_RECOMP["<b>RÉCOMPENSE</b><br/><i>match_rewards</i>"]:::entite
+  end
+  subgraph COM["community — base ml_community"]
+    C_DISC["<b>DISCUSSION</b><br/><i>discussions</i>"]:::entite
+  end
+  subgraph STU["studio — base ml_studio"]
+    T_PROJET["<b>PROJET</b><br/><i>projects</i>"]:::entite
+    T_GEN["<b>GÉNÉRATION</b><br/><i>generations</i>"]:::entite
+    T_MEDIA["<b>MÉDIA</b><br/><i>media</i>"]:::entite
+  end
+  subgraph NOT["notifications — base ml_notifications"]
+    N_NOTIF["<b>NOTIFICATION</b><br/><i>notifications</i>"]:::entite
+  end
+
+  LRN -.->|"user_id, author_id"| A_MEMBRE
+  BIL -.->|"user_id"| A_MEMBRE
+  SOC -.->|"requester_id, sender_id…"| A_MEMBRE
+  MUL -.->|"host_id, user_id…"| A_MEMBRE
+  COM -.->|"author_id, user_id…"| A_MEMBRE
+  STU -.->|"owner_id, user_id…"| A_MEMBRE
+  NOT -.->|"user_id, actor_id"| A_MEMBRE
+  S_SIG -.->|"sanction_id"| A_SANCTION
+  L_AVENTURE <-.->|"external_id ↔ published_adventure_id"| T_PROJET
+  B_ECRITURE -.->|"ref « studio:gen:‹id› »"| T_GEN
+  L_GAIN -.->|"ref_key « multiplayer:match:‹id› »"| M_RECOMP
+  L_LECON -.->|"content : /media/studio/‹id›"| T_MEDIA

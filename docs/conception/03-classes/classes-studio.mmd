@@ -1,0 +1,246 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/studio/lib et la base ml_studio_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service studio : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref Collaborator src/studio/lib/studio/projects/collaborator.ex:1 | defmodule MlStudio.Projects.Collaborator do
+%% @ref Generation src/studio/lib/studio/ai/generation.ex:1 | defmodule MlStudio.AI.Generation do
+%% @ref Image src/studio/lib/studio/images/image.ex:1 | defmodule MlStudio.Images.Image do
+%% @ref Lesson src/studio/lib/studio/projects/lesson.ex:1 | defmodule MlStudio.Projects.Lesson do
+%% @ref Medium src/studio/lib/studio/media/medium.ex:1 | defmodule MlStudio.Media.Medium do
+%% @ref Setting src/studio/lib/studio/ai/setting.ex:1 | defmodule MlStudio.AI.Setting do
+%% @ref CourseModule src/studio/lib/studio/projects/course_module.ex:1 | defmodule MlStudio.Projects.CourseModule do
+%% @ref Project src/studio/lib/studio/projects/project.ex:1 | defmodule MlStudio.Projects.Project do
+%% @ref Version src/studio/lib/studio/projects/version.ex:1 | defmodule MlStudio.Projects.Version do
+%% @ref Projects src/studio/lib/studio/projects.ex:1 | defmodule MlStudio.Projects do
+%% @ref AI src/studio/lib/studio/ai.ex:1 | defmodule MlStudio.AI do
+%% @ref Publishing src/studio/lib/studio/publishing.ex:1 | defmodule MlStudio.Publishing do
+%% @ref Images src/studio/lib/studio/images.ex:1 | defmodule MlStudio.Images do
+%% @ref Media src/studio/lib/studio/media.ex:1 | defmodule MlStudio.Media do
+%% @ref Services src/studio/lib/studio/services.ex:1 | defmodule MlStudio.Services do
+%% @ref GenerationWorker src/studio/lib/studio/ai/generation_worker.ex:1 | defmodule MlStudio.AI.GenerationWorker do
+%% @ref SettleWorker src/studio/lib/studio/ai/settle_worker.ex:1 | defmodule MlStudio.AI.SettleWorker do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class Projects_Collaborator["MlStudio.Projects.Collaborator"] {
+      <<schema collaborators>>
+      +id : binary_id «PK»
+      +user_id : Ecto.UUID
+      +username : string
+      +role : string
+      +invited_by : Ecto.UUID
+      +project_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class AI_Generation["MlStudio.AI.Generation"] {
+      <<schema generations>>
+      +id : binary_id «PK»
+      +user_id : Ecto.UUID
+      +kind : string
+      +status : string = "pending"
+      +cost : integer
+      +provider : string
+      +model : string
+      +brief : string
+      +result : map
+      +error : string
+      +credits : string = "reserved"
+      +retry_of : Ecto.UUID
+      +applied_at : utc_datetime
+      +started_at : utc_datetime
+      +finished_at : utc_datetime
+      +project_id : binary_id «FK»
+      +lesson_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Images_Image["MlStudio.Images.Image"] {
+      <<schema images>>
+      +id : binary_id «PK»
+      +uploader_id : Ecto.UUID
+      +alt : string = ""
+      +content_type : string
+      +byte_size : integer
+      +source : string
+      +project_id : binary_id «FK»
+      +lesson_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Projects_Lesson["MlStudio.Projects.Lesson"] {
+      <<schema lessons>>
+      +id : binary_id «PK»
+      +position : integer
+      +title : string
+      +kind : string
+      +body : string = ""
+      +xp_reward : integer = 10
+      +content : map = %｛｝
+      +lock_version : integer = 1
+      +project_id : binary_id «FK»
+      +module_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Media_Medium["MlStudio.Media.Medium"] {
+      <<schema media>>
+      +id : binary_id «PK»
+      +uploader_id : Ecto.UUID
+      +kind : string
+      +content_type : string
+      +byte_size : integer
+      +lang : string
+      +label : string
+      +project_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class AI_Setting["MlStudio.AI.Setting"] {
+      <<schema member_settings>>
+      +user_id : binary_id «PK»
+      +share_drafts_with_ai : boolean = false
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Projects_CourseModule["MlStudio.Projects.CourseModule"] {
+      <<schema modules>>
+      +id : binary_id «PK»
+      +position : integer
+      +title : string
+      +lock_version : integer = 1
+      +project_id : binary_id «FK»
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Projects_Project["MlStudio.Projects.Project"] {
+      <<schema projects>>
+      +id : binary_id «PK»
+      +owner_id : Ecto.UUID
+      +title : string
+      +summary : string = ""
+      +description : string = ""
+      +objectives : array~string~ = []
+      +prerequisites : array~string~ = []
+      +audience : string = ""
+      +level : string = "beginner"
+      +duration_minutes : integer = 30
+      +category : string = "creative"
+      +cover : string = "forest"
+      +status : string = "draft"
+      +lock_version : integer = 1
+      +content_revision : integer = 1
+      +attestations : map
+      +attested_revision : integer
+      +attested_at : utc_datetime
+      +review_version : integer
+      +submitted_at : utc_datetime
+      +reviewed_by : Ecto.UUID
+      +reviewed_at : utc_datetime
+      +review_reason : string
+      +import_message : string
+      +published_slug : string
+      +published_adventure_id : string
+      +published_version : integer
+      +published_at : utc_datetime
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Projects_Version["MlStudio.Projects.Version"] {
+      <<schema versions>>
+      +id : binary_id «PK»
+      +number : integer
+      +note : string = ""
+      +source : string
+      +author_id : Ecto.UUID
+      +snapshot : map
+      +project_id : binary_id «FK»
+      +inserted_at : utc_datetime
+    }
+  }
+  namespace Modules_de_contexte {
+    class Projects["MlStudio.Projects"] {
+      <<module>>
+      +create(user_id, attrs)
+      +get(user_id, project_id)
+      +update_brief(user_id, project_id, attrs)
+      +add_module(user_id, project_id, attrs)
+      +add_lesson(user_id, project_id, module_id, attrs)
+      +update_lesson(user_id, project_id, lesson_id, attrs)
+      +invite(user_id, project_id, attrs)
+      +create_version(user_id, project_id, attrs)
+      +restore_version(user_id, project_id, version_id)
+    }
+    class AI["MlStudio.AI"] {
+      <<module>>
+      +info(user_id)
+      +set_consent(user_id, params)
+      +create(user_id, project_id, params, retry_of)
+      +cancel(user_id, generation_id)
+      +retry(user_id, generation_id, params)
+      +apply(user_id, generation_id)
+      +run(generation, last_attempt?)
+      +settle(generation)
+    }
+    class Publishing["MlStudio.Publishing"] {
+      <<module>>
+      +checks(user_id, project_id)
+      +attest(user_id, project_id, params)
+      +submit(user_id, project_id)
+      +approve(user_id, project_id)
+      +reject(user_id, project_id, params)
+      +retry_import(user_id, project_id)
+    }
+    class Images["MlStudio.Images"] {
+      <<module>>
+      +upload(user_id, project_id, params)
+      +store_generated(project_id, lesson_id, user_id, map)
+      +delete(user_id, project_id, image_id)
+    }
+    class Media["MlStudio.Media"] {
+      <<module>>
+      +upload_video(user_id, project_id, lesson_id, data)
+      +add_captions(user_id, project_id, lesson_id, params)
+      +fetch_published(media_id)
+    }
+    class Services["MlStudio.Services"] {
+      <<module>>
+      +reserve(user_id, amount, ref, reason)
+      +settle(user_id, ref, operation)
+      +import_adventure(payload)
+      +plan(user_id)
+    }
+    class AI_GenerationWorker["MlStudio.AI.GenerationWorker"] {
+      <<Oban.Worker file ai>>
+      +perform(job)
+    }
+    class AI_SettleWorker["MlStudio.AI.SettleWorker"] {
+      <<Oban.Worker file credits>>
+      +perform(job)
+    }
+  }
+  Projects_Project "1" -- "0..*" Projects_Collaborator : has_many collaborators / belongs_to project
+  Projects_Lesson "0..1" -- "0..*" AI_Generation : belongs_to lesson
+  Projects_Project "1" -- "0..*" AI_Generation : belongs_to project
+  Projects_Lesson "0..1" -- "0..*" Images_Image : belongs_to lesson
+  Projects_Project "1" -- "0..*" Images_Image : has_many images / belongs_to project
+  Projects_CourseModule "1" -- "0..*" Projects_Lesson : has_many lessons / belongs_to module
+  Projects_Project "1" -- "0..*" Projects_Lesson : belongs_to project
+  Projects_Project "1" -- "0..*" Media_Medium : has_many media / belongs_to project
+  Projects_Project "1" -- "0..*" Projects_CourseModule : has_many modules / belongs_to project
+  Projects_Project "1" -- "0..*" Projects_Version : belongs_to project
+  Projects ..> Projects_Project
+  Projects ..> Projects_CourseModule
+  Projects ..> Projects_Lesson
+  Projects ..> Projects_Collaborator
+  Projects ..> Projects_Version
+  AI ..> AI_Generation
+  AI ..> AI_Setting
+  Publishing ..> Projects_Project
+  Images ..> Images_Image
+  Media ..> Media_Medium
+  AI_GenerationWorker ..> AI_Generation
+  AI_SettleWorker ..> AI_Generation

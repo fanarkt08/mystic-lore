@@ -1,0 +1,907 @@
+{
+ "database": "ml_notifications_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261125100000,
+  20261125100001
+ ],
+ "tables": [
+  {
+   "table": "email_log",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('email_log_id_seq'::regclass)"
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "dedupe_key",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "category",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "sent_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "email_log_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "email_log_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "email_log_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX email_log_pkey ON public.email_log USING btree (id)"
+    },
+    {
+     "name": "email_log_user_id_dedupe_key_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX email_log_user_id_dedupe_key_inserted_at_index ON public.email_log USING btree (user_id, dedupe_key, inserted_at)"
+    },
+    {
+     "name": "email_log_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX email_log_user_id_inserted_at_index ON public.email_log USING btree (user_id, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "notification_events",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "event_id",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "notification_events_pkey",
+     "type": "p",
+     "columns": [
+      "user_id",
+      "event_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id, event_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "notification_events_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX notification_events_inserted_at_index ON public.notification_events USING btree (inserted_at)"
+    },
+    {
+     "name": "notification_events_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "notification_events_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX notification_events_pkey ON public.notification_events USING btree (user_id, event_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "notification_read_marks",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "dedupe_key",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "read_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "notification_read_marks_pkey",
+     "type": "p",
+     "columns": [
+      "user_id",
+      "dedupe_key"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id, dedupe_key)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "notification_read_marks_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "notification_read_marks_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX notification_read_marks_pkey ON public.notification_read_marks USING btree (user_id, dedupe_key)"
+    },
+    {
+     "name": "notification_read_marks_read_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX notification_read_marks_read_at_index ON public.notification_read_marks USING btree (read_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "notification_settings",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "channels",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "quiet_enabled",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "quiet_start",
+     "type": "time(0) without time zone",
+     "not_null": true,
+     "default": "'22:00:00'::time without time zone"
+    },
+    {
+     "name": "quiet_end",
+     "type": "time(0) without time zone",
+     "not_null": true,
+     "default": "'07:00:00'::time without time zone"
+    },
+    {
+     "name": "time_zone",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "notification_settings_pkey",
+     "type": "p",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "notification_settings_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "notification_settings_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX notification_settings_pkey ON public.notification_settings USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "notifications",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "category",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "actor_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "subject_type",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "subject_id",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "params",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "dedupe_key",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "count",
+     "type": "integer",
+     "not_null": true,
+     "default": "1"
+    },
+    {
+     "name": "read_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "last_event_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "count_positive",
+     "type": "c",
+     "columns": [
+      "count"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((count >= 1))"
+    },
+    {
+     "name": "notifications_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "notifications_actor_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX notifications_actor_id_index ON public.notifications USING btree (actor_id)"
+    },
+    {
+     "name": "notifications_last_event_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX notifications_last_event_at_index ON public.notifications USING btree (last_event_at)"
+    },
+    {
+     "name": "notifications_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "notifications_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+    },
+    {
+     "name": "notifications_unread_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": "(read_at IS NULL)",
+     "definition": "CREATE INDEX notifications_unread_index ON public.notifications USING btree (user_id) WHERE (read_at IS NULL)"
+    },
+    {
+     "name": "notifications_unread_key_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": "(read_at IS NULL)",
+     "definition": "CREATE UNIQUE INDEX notifications_unread_key_index ON public.notifications USING btree (user_id, dedupe_key) WHERE (read_at IS NULL)"
+    },
+    {
+     "name": "notifications_user_id_last_event_at_DESC_id_DESC_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX \"notifications_user_id_last_event_at_DESC_id_DESC_index\" ON public.notifications USING btree (user_id, last_event_at DESC, id DESC)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_jobs",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('oban_jobs_id_seq'::regclass)"
+    },
+    {
+     "name": "state",
+     "type": "oban_job_state",
+     "not_null": true,
+     "default": "'available'::oban_job_state"
+    },
+    {
+     "name": "queue",
+     "type": "text",
+     "not_null": true,
+     "default": "'default'::text"
+    },
+    {
+     "name": "worker",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "args",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "errors",
+     "type": "jsonb[]",
+     "not_null": true,
+     "default": "ARRAY[]::jsonb[]"
+    },
+    {
+     "name": "attempt",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "max_attempts",
+     "type": "integer",
+     "not_null": true,
+     "default": "20"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "scheduled_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "attempted_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "completed_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "attempted_by",
+     "type": "text[]",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "discarded_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "priority",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "tags",
+     "type": "text[]",
+     "not_null": false,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "meta",
+     "type": "jsonb",
+     "not_null": false,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "cancelled_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "attempt_range",
+     "type": "c",
+     "columns": [
+      "attempt",
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((attempt >= 0) AND (attempt <= max_attempts)))"
+    },
+    {
+     "name": "non_negative_priority",
+     "type": "c",
+     "columns": [
+      "priority"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((priority >= 0)) NOT VALID"
+    },
+    {
+     "name": "positive_max_attempts",
+     "type": "c",
+     "columns": [
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((max_attempts > 0))"
+    },
+    {
+     "name": "queue_length",
+     "type": "c",
+     "columns": [
+      "queue"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128)))"
+    },
+    {
+     "name": "worker_length",
+     "type": "c",
+     "columns": [
+      "worker"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_jobs_args_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_args_index ON public.oban_jobs USING gin (args)"
+    },
+    {
+     "name": "oban_jobs_meta_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta)"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_jobs_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_jobs_pkey ON public.oban_jobs USING btree (id)"
+    },
+    {
+     "name": "oban_jobs_state_cancelled_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_cancelled_at_index ON public.oban_jobs USING btree (state, cancelled_at)"
+    },
+    {
+     "name": "oban_jobs_state_discarded_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_discarded_at_index ON public.oban_jobs USING btree (state, discarded_at)"
+    },
+    {
+     "name": "oban_jobs_state_queue_priority_scheduled_at_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban_jobs USING btree (state, queue, priority, scheduled_at, id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_peers",
+   "columns": [
+    {
+     "name": "name",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "node",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "started_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "oban_peers_pkey",
+     "type": "p",
+     "columns": [
+      "name"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (name)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_peers_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_peers_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_peers_pkey ON public.oban_peers USING btree (name)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "pending_emails",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "notification_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "category",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "actor_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "params",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "dedupe_key",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "mandatory",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "pending_emails_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "pending_emails_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "pending_emails_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX pending_emails_pkey ON public.pending_emails USING btree (id)"
+    },
+    {
+     "name": "pending_emails_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX pending_emails_user_id_inserted_at_index ON public.pending_emails USING btree (user_id, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  }
+ ]
+}

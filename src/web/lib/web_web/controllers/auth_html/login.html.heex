@@ -1,0 +1,86 @@
+<.auth_shell flash={@flash} eyebrow={gettext("Academy gate")} title={gettext("Welcome back")}>
+  <:lead>{gettext("Log in to continue your adventure where you left it.")}</:lead>
+
+  <.access_state
+    :if={@notice == :expired}
+    id="session-expired"
+    icon="hero-clock"
+    tone="info"
+    title={gettext("Your session has ended")}
+  >
+    {gettext(
+      "It expired, or it was signed out (from another device, or after a password change). Log in again to continue."
+    )}
+    <span :if={@return_to?}>{gettext("You'll go back to the page you were on.")}</span>
+  </.access_state>
+
+  <div id="login-error">
+    <%= case @error do %>
+      <% :invalid -> %>
+        <.notice kind="danger" role="alert">{gettext("Invalid email or password.")}</.notice>
+      <% :unconfirmed -> %>
+        <.notice kind="warning" role="alert" title={gettext("Please confirm your email first")}>
+          {gettext(
+            "Your password is correct, but your email address isn't confirmed yet. Open the link we sent you, or ask for a new one."
+          )}
+          <:actions>
+            <.resend_form
+              id="login-resend"
+              email={@form[:email].value}
+              label={gettext("Resend the confirmation email")}
+            />
+          </:actions>
+        </.notice>
+      <% :locked -> %>
+        <.notice kind="danger" role="alert">
+          {gettext(
+            "Too many failed attempts for this account. Please wait 15 minutes before trying again."
+          )}
+        </.notice>
+      <% :rate_limited -> %>
+        <.notice kind="danger" role="alert">
+          {gettext("Too many attempts from your connection. Please wait a minute and try again.")}
+        </.notice>
+      <% :unavailable -> %>
+        <.notice kind="warning" role="alert" title={gettext("Temporarily unavailable")}>
+          {gettext("Sign-in is temporarily unavailable. Please try again in a moment.")}
+        </.notice>
+      <% nil -> %>
+    <% end %>
+  </div>
+
+  <.form for={@form} action={~p"/login"} id="login-form" class="space-y-4">
+    <.input
+      field={@form[:email]}
+      type="email"
+      label={gettext("Email")}
+      autocomplete="email"
+      required
+    />
+    <.input
+      field={@form[:password]}
+      type="password"
+      label={gettext("Password")}
+      autocomplete="current-password"
+      required
+    />
+    <.button type="submit" class="w-full">{gettext("Log in")}</.button>
+  </.form>
+
+  <p class="text-sm">
+    <.link href={~p"/forgot-password"} id="forgot-password-link" class="link">
+      {gettext("Forgot your password?")}
+    </.link>
+  </p>
+
+  <p class="text-sm text-muted">
+    {gettext("New to the academy?")}
+    <.link href={~p"/register"} class="link">{gettext("Create an account")}</.link>
+  </p>
+
+  <.notice :if={@dev_hints} kind="info" title={gettext("Development: demo accounts")}>
+    {gettext(
+      "Fictional members such as lyra@mysticlore.test or orion@mysticlore.test use the demo password from SEED_DEMO_PASSWORD (default: mystic-demo-pass-1)."
+    )}
+  </.notice>
+</.auth_shell>

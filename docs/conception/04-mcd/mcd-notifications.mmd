@@ -1,0 +1,50 @@
+%% MCD (Merise) — domaine notifications (base ml_notifications). Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine notifications : notifications, préférences, heures calmes et e-mails (notation Merise)
+%% @legende La base notifications n’a AUCUNE clé étrangère : toutes les associations sont en pointillés. Elle ne garde que des identifiants (user_id, actor_id) et des textes publics courts — jamais d’adresse e-mail, d’URL ni de texte rédigé ; subject_type + subject_id désignent un objet du service producteur (texte, sans association dessinée).
+%% @legende « (1,1) » = identification relative au membre : RÉGLAGES (clé primaire user_id), OCCURRENCE TRAITÉE (user_id, event_id : une occurrence traitée une seule fois) et MARQUE DE LECTURE (user_id, dedupe_key : « lu jusqu’à »). Au plus UNE notification non lue par (destinataire, dedupe_key) : index unique partiel WHERE read_at IS NULL (agrégation).
+%% @legende Rétention : notifications 90 jours et 500 par membre ; occurrences 30 jours ; marques de lecture 7 jours ; journal des e-mails 2 jours ; e-mails reportés 7 jours. Simplification : inserted_at / updated_at omis (la date d’insertion sert pourtant aux purges).
+%% @ref MPD docs/conception/05-mpd/mpd-notifications.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Aucun-texte src/notifications/priv/repo/migrations/20261125100001_create_notifications.exs:5-6 | Jamais de texte rédigé, d'URL ni de contenu privé
+%% @ref Report src/notifications/lib/notifications/emails.ex:49 | notification_id: notification && notification.id,
+%% @ref Rétention docs/contracts/notifications.md:151-154 | **90 jours** (lues ou non) ; **500** au plus par membre
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef externe fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:6 4,color:#374151
+
+  MEMBRE["<b>MEMBRE</b><br/><i>accounts.users — autre base</i><br/><u>id</u>"]:::externe
+  NOTIF["<b>NOTIFICATION</b><br/><i>notifications</i><br/><u>id</u><br/>category<br/>kind<br/>subject_type<br/>subject_id<br/>params<br/>dedupe_key<br/>count<br/>read_at<br/>last_event_at"]:::entite
+  REPORT["<b>E-MAIL REPORTÉ</b><br/><i>pending_emails</i><br/><u>id</u><br/>category<br/>kind<br/>params<br/>dedupe_key<br/>mandatory"]:::entite
+  JOURNAL["<b>E-MAIL DEMANDÉ</b><br/><i>email_log</i><br/><u>id</u><br/>dedupe_key<br/>category<br/>kind<br/>sent_at"]:::entite
+  REGLAGES["<b>RÉGLAGES DE NOTIFICATION</b><br/><i>notification_settings</i><br/>channels<br/>quiet_enabled<br/>quiet_start<br/>quiet_end<br/>time_zone"]:::entite
+  OCC["<b>OCCURRENCE TRAITÉE</b><br/><i>notification_events</i><br/><u>event_id</u>"]:::entite
+  MARQUE["<b>MARQUE DE LECTURE</b><br/><i>notification_read_marks</i><br/><u>dedupe_key</u><br/>read_at"]:::entite
+
+  RECEVOIR(["recevoir"]):::association
+  ACTEUR(["être l’acteur de"]):::association
+  ATTENDRE(["attendre"]):::association
+  ACTEUR2(["être l’acteur de"]):::association
+  REPORTER(["reporter"]):::association
+  DEMANDER(["demander"]):::association
+  REGLER(["régler"]):::association
+  TRAITER(["traiter"]):::association
+  LIRE(["lire"]):::association
+
+  MEMBRE -.-|"0,n"| RECEVOIR
+  RECEVOIR -.-|"1,1"| NOTIF
+  MEMBRE -.-|"0,n"| ACTEUR
+  ACTEUR -.-|"0,1"| NOTIF
+  MEMBRE -.-|"0,n"| ATTENDRE
+  ATTENDRE -.-|"1,1"| REPORT
+  MEMBRE -.-|"0,n"| ACTEUR2
+  ACTEUR2 -.-|"0,1"| REPORT
+  NOTIF -.-|"0,n"| REPORTER
+  REPORTER -.-|"0,1"| REPORT
+  MEMBRE -.-|"0,n"| DEMANDER
+  DEMANDER -.-|"1,1"| JOURNAL
+  MEMBRE -.-|"0,1"| REGLER
+  REGLER -.-|"(1,1)"| REGLAGES
+  MEMBRE -.-|"0,n"| TRAITER
+  TRAITER -.-|"(1,1)"| OCC
+  MEMBRE -.-|"0,n"| LIRE
+  LIRE -.-|"(1,1)"| MARQUE

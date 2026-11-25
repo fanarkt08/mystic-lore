@@ -1,0 +1,76 @@
+%% MCD (Merise) — domaine social (base ml_social). Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine social : amitiés, blocages, conversations, messages, pièces jointes et signalements (notation Merise)
+%% @legende Trait plein : clé étrangère réelle (messages → conversations, conversation_members → conversations, attachments → messages). Pointillés : identifiant d’une autre base (MEMBRE = accounts.users, SANCTION = accounts.sanctions) ou d’une table de la même base sans clé étrangère (cible d’un signalement selon target_type, pièce jointe citée par un signalement).
+%% @legende Associations réflexives sur MEMBRE : DEMANDER EN AMI (rôles demandeur et destinataire, une seule relation par paire NON ordonnée, index unique LEAST/GREATEST) et BLOQUER (rôles bloqueur et bloqué, clé primaire composée). Une conversation directe relie exactement 2 membres (paire user_low < user_high, unique) ; un groupe a un propriétaire (owner_id) et un nom.
+%% @legende Contraintes : une pièce jointe au plus par message (index unique message_id) ; un message est soit un texte (1 à 2 000 caractères), soit un message système. « (1,1) » = identification relative : RÉGLAGES a pour clé primaire le user_id. Simplification : inserted_at omis.
+%% @ref MPD docs/conception/05-mpd/mpd-social.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Sans-FK src/social/priv/repo/migrations/20261123135120_create_social.exs:4 | Les membres vivent dans la base d'accounts : leurs UUID sont stockés ici sans clé étrangère.
+%% @ref Paire src/social/priv/repo/migrations/20261123135120_create_social.exs:21-25 | LEAST(requester_id, addressee_id)
+%% @ref Sanction src/social/lib/social/moderation.ex:202-204 | sanction_id: outcome.meta["sanction_id"]
+%% @ref Pièce-citée src/social/lib/social/reports.ex:39 | message_attachment_id: m.attachment && m.attachment.id
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef externe fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:6 4,color:#374151
+
+  MEMBRE["<b>MEMBRE</b><br/><i>accounts.users — autre base</i><br/><u>id</u>"]:::externe
+  SANCTION["<b>SANCTION</b><br/><i>accounts.sanctions — autre base</i><br/><u>id</u>"]:::externe
+
+  CONV["<b>CONVERSATION</b><br/><i>conversations</i><br/><u>id</u><br/>kind<br/>name"]:::entite
+  MESSAGE["<b>MESSAGE</b><br/><i>messages</i><br/><u>id</u><br/>kind<br/>body<br/>system<br/>removed_at<br/>inserted_at"]:::entite
+  PJ["<b>PIÈCE JOINTE</b><br/><i>attachments</i><br/><u>id</u><br/>kind<br/>content_type<br/>byte_size<br/>width<br/>height<br/>filename<br/>alt_text<br/>scan<br/>storage_key<br/>erased_at"]:::entite
+  SIG["<b>SIGNALEMENT</b><br/><i>reports</i><br/><u>id</u><br/>target_type<br/>reason<br/>details<br/>message_body<br/>message_sender_id<br/>message_sent_at<br/>status<br/>resolution<br/>resolution_reason<br/>resolved_at"]:::entite
+  REGLAGES["<b>RÉGLAGES DE CONFIDENTIALITÉ</b><br/><i>settings</i><br/>show_online<br/>read_receipts<br/>friend_requests<br/>group_adds<br/>lobby_invites"]:::entite
+
+  AMI(["DEMANDER EN AMI<br/>status"]):::association
+  BLOQUER(["BLOQUER"]):::association
+  DIRECT(["relier en direct"]):::association
+  PROPRIO(["posséder"]):::association
+  PARTICIPER(["PARTICIPER<br/>joined_at, last_read_at, muted_until"]):::association
+  CONTENIR(["contenir"]):::association
+  ENVOYER(["envoyer"]):::association
+  RETIRER(["retirer"]):::association
+  JOINDRE(["joindre"]):::association
+  TELEVERSER(["téléverser"]):::association
+  SIGNALER(["signaler"]):::association
+  VISERM(["viser un membre"]):::association
+  VISERMSG(["viser un message"]):::association
+  CITER(["citer"]):::association
+  RESOUDRE(["résoudre"]):::association
+  SANCTIONNER(["donner lieu à"]):::association
+  REGLER(["régler"]):::association
+
+  MEMBRE -.-|"0,n demandeur"| AMI
+  MEMBRE -.-|"0,n destinataire"| AMI
+  MEMBRE -.-|"0,n bloqueur"| BLOQUER
+  MEMBRE -.-|"0,n bloqué"| BLOQUER
+  MEMBRE -.-|"0,n"| DIRECT
+  DIRECT -.-|"0,2"| CONV
+  MEMBRE -.-|"0,n"| PROPRIO
+  PROPRIO -.-|"0,1"| CONV
+  MEMBRE -.-|"0,n"| PARTICIPER
+  PARTICIPER ---|"0,n"| CONV
+  CONV ---|"0,n"| CONTENIR
+  CONTENIR ---|"1,1"| MESSAGE
+  MEMBRE -.-|"0,n"| ENVOYER
+  ENVOYER -.-|"1,1"| MESSAGE
+  MEMBRE -.-|"0,n"| RETIRER
+  RETIRER -.-|"0,1"| MESSAGE
+  MESSAGE ---|"0,1"| JOINDRE
+  JOINDRE ---|"1,1"| PJ
+  MEMBRE -.-|"0,n"| TELEVERSER
+  TELEVERSER -.-|"1,1"| PJ
+  MEMBRE -.-|"0,n"| SIGNALER
+  SIGNALER -.-|"1,1"| SIG
+  MEMBRE -.-|"0,n"| VISERM
+  VISERM -.-|"0,1"| SIG
+  MESSAGE -.-|"0,n"| VISERMSG
+  VISERMSG -.-|"0,1"| SIG
+  PJ -.-|"0,n"| CITER
+  CITER -.-|"0,1"| SIG
+  MEMBRE -.-|"0,n"| RESOUDRE
+  RESOUDRE -.-|"0,1"| SIG
+  SANCTION -.-|"0,n"| SANCTIONNER
+  SANCTIONNER -.-|"0,1"| SIG
+  MEMBRE -.-|"0,1"| REGLER
+  REGLER -.-|"(1,1)"| REGLAGES

@@ -1,0 +1,74 @@
+%% MCD (Merise) — domaine multiplayer (base ml_multiplayer). Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine multiplayer : salons, invitations, parties « The Rune Relay » et récompenses (notation Merise)
+%% @legende Trait plein : clé étrangère réelle (ON DELETE CASCADE vers lobbies ou matches). Pointillés : identifiant d’une autre base (MEMBRE = accounts.users, GAIN_XP = learning.xp_events) ou référence sans clé étrangère dans la même base (lobbies.current_match_id → la partie en cours).
+%% @legende « (1,1) » = identification relative : un ÉVÉNEMENT DE PARTIE est identifié par sa partie et son numéro seq (clé primaire match_id, seq) — journal sans trou ni doublon, rejoué pour reconstruire la partie. REJOINDRE correspond à lobby_members (clé primaire lobby_id, user_id) : demande, membre actif, parti, exclu ou refusé.
+%% @legende Contraintes : une invitation par (salon, invité) ; une récompense par (partie, joueur) ; une victoire verse 50 XP par learning avec ref_key « multiplayer:match:‹id› ». Simplification : inserted_at / updated_at omis.
+%% @ref MPD docs/conception/05-mpd/mpd-multiplayer.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Sans-FK src/multiplayer/priv/repo/migrations/20261123170000_create_multiplayer.exs:4 | Les membres vivent dans la base d'accounts : leurs UUID sont stockés ici sans clé étrangère.
+%% @ref Partie-en-cours src/multiplayer/lib/multiplayer/lobbies.ex:414 | current_match_id: match.id
+%% @ref XP src/multiplayer/lib/multiplayer/rewards.ex:91 | ref_key: "multiplayer:match:#{reward.match_id}",
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef externe fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:6 4,color:#374151
+
+  MEMBRE["<b>MEMBRE</b><br/><i>accounts.users — autre base</i><br/><u>id</u>"]:::externe
+  GAIN["<b>GAIN_XP</b><br/><i>learning.xp_events — autre base</i><br/><u>id</u>"]:::externe
+
+  SALON["<b>SALON</b><br/><i>lobbies</i><br/><u>id</u><br/>title<br/>visibility<br/>requires_approval<br/>max_players<br/>starts_at<br/>status"]:::entite
+  INVIT["<b>INVITATION</b><br/><i>lobby_invites</i><br/><u>id</u><br/>status"]:::entite
+  LIEN["<b>LIEN D’INVITATION</b><br/><i>lobby_links</i><br/><u>id</u><br/>token_hash<br/>expires_at<br/>max_uses<br/>uses<br/>revoked_at"]:::entite
+  MSG["<b>MESSAGE DE SALON</b><br/><i>lobby_messages</i><br/><u>id</u><br/>body<br/>inserted_at"]:::entite
+  PARTIE["<b>PARTIE</b><br/><i>matches</i><br/><u>id</u><br/>status<br/>last_seq<br/>finished_at"]:::entite
+  EVT["<b>ÉVÉNEMENT DE PARTIE</b><br/><i>match_events</i><br/><u>seq</u><br/>type<br/>payload"]:::entite
+  RECOMP["<b>RÉCOMPENSE</b><br/><i>match_rewards</i><br/><u>id</u><br/>amount<br/>status<br/>attempts<br/>next_attempt_at<br/>last_error<br/>awarded_at"]:::entite
+
+  HEBERGER(["héberger"]):::association
+  REJOINDRE(["REJOINDRE<br/>status, ready, connection,<br/>last_seen_at, joined_at"]):::association
+  ENVOYERINV(["inviter"]):::association
+  CONCERNERINV(["concerner"]):::association
+  RECEVOIRINV(["être invité"]):::association
+  CREERLIEN(["créer"]):::association
+  OUVRIRLIEN(["ouvrir"]):::association
+  ECRIRE(["écrire"]):::association
+  PUBLIER(["publier"]):::association
+  ACCUEILLIR(["accueillir"]):::association
+  ENCOURS(["jouer en ce moment"]):::association
+  JOURNALISER(["journaliser"]):::association
+  AGIR(["agir"]):::association
+  RECOMPENSER(["récompenser"]):::association
+  RECEVOIR(["recevoir"]):::association
+  VERSER(["être versée en"]):::association
+
+  MEMBRE -.-|"0,n"| HEBERGER
+  HEBERGER -.-|"1,1"| SALON
+  MEMBRE -.-|"0,n"| REJOINDRE
+  REJOINDRE ---|"0,n"| SALON
+  SALON ---|"0,n"| CONCERNERINV
+  CONCERNERINV ---|"1,1"| INVIT
+  MEMBRE -.-|"0,n"| ENVOYERINV
+  ENVOYERINV -.-|"1,1"| INVIT
+  MEMBRE -.-|"0,n"| RECEVOIRINV
+  RECEVOIRINV -.-|"1,1"| INVIT
+  SALON ---|"0,n"| OUVRIRLIEN
+  OUVRIRLIEN ---|"1,1"| LIEN
+  MEMBRE -.-|"0,n"| CREERLIEN
+  CREERLIEN -.-|"1,1"| LIEN
+  SALON ---|"0,n"| PUBLIER
+  PUBLIER ---|"1,1"| MSG
+  MEMBRE -.-|"0,n"| ECRIRE
+  ECRIRE -.-|"1,1"| MSG
+  SALON ---|"0,n"| ACCUEILLIR
+  ACCUEILLIR ---|"1,1"| PARTIE
+  SALON -.-|"0,1"| ENCOURS
+  ENCOURS -.-|"0,1"| PARTIE
+  PARTIE ---|"0,n"| JOURNALISER
+  JOURNALISER ---|"(1,1)"| EVT
+  MEMBRE -.-|"0,n"| AGIR
+  AGIR -.-|"0,1"| EVT
+  PARTIE ---|"0,n"| RECOMPENSER
+  RECOMPENSER ---|"1,1"| RECOMP
+  MEMBRE -.-|"0,n"| RECEVOIR
+  RECEVOIR -.-|"1,1"| RECOMP
+  RECOMP -.-|"0,1"| VERSER
+  VERSER -.-|"0,1"| GAIN

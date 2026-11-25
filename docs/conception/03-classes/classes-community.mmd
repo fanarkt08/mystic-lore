@@ -1,0 +1,154 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/community/lib et la base ml_community_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service community : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref Category src/community/lib/community/category.ex:1 | defmodule MlCommunity.Category do
+%% @ref Discussion src/community/lib/community/discussion.ex:1 | defmodule MlCommunity.Discussion do
+%% @ref Follow src/community/lib/community/follow.ex:1 | defmodule MlCommunity.Follow do
+%% @ref ModerationEntry src/community/lib/community/moderation_entry.ex:1 | defmodule MlCommunity.ModerationEntry do
+%% @ref Reply src/community/lib/community/reply.ex:1 | defmodule MlCommunity.Reply do
+%% @ref Report src/community/lib/community/report.ex:1 | defmodule MlCommunity.Report do
+%% @ref Vote src/community/lib/community/vote.ex:1 | defmodule MlCommunity.Vote do
+%% @ref Forum src/community/lib/community/forum.ex:1 | defmodule MlCommunity.Forum do
+%% @ref Posts src/community/lib/community/posts.ex:1 | defmodule MlCommunity.Posts do
+%% @ref Votes src/community/lib/community/votes.ex:1 | defmodule MlCommunity.Votes do
+%% @ref Reports src/community/lib/community/reports.ex:1 | defmodule MlCommunity.Reports do
+%% @ref Moderation src/community/lib/community/moderation.ex:1 | defmodule MlCommunity.Moderation do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class Category["MlCommunity.Category"] {
+      <<schema categories>>
+      +slug : string «PK»
+      +name : string
+      +description : string
+      +position : integer
+      +staff_only : boolean = false
+    }
+    class Discussion["MlCommunity.Discussion"] {
+      <<schema discussions>>
+      +id : binary_id «PK»
+      +category : string
+      +author_id : binary_id
+      +title : string
+      +slug : string
+      +body : string
+      +status : string = "visible"
+      +pinned : boolean = false
+      +locked : boolean = false
+      +solution_reply_id : binary_id
+      +helpful_count : integer = 0
+      +moderation_reason : string
+      +edited_at : utc_datetime_usec
+      +last_activity_at : utc_datetime_usec
+      +category_name : string «virtual»
+      +reply_count : integer = 0 «virtual»
+      +following : boolean = false «virtual»
+      +voted : boolean = false «virtual»
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Follow["MlCommunity.Follow"] {
+      <<schema follows>>
+      +user_id : binary_id «PK»
+      +discussion_id : binary_id «PK»
+      +inserted_at : utc_datetime_usec
+    }
+    class ModerationEntry["MlCommunity.ModerationEntry"] {
+      <<schema moderation_log>>
+      +id : binary_id «PK»
+      +moderator_id : binary_id
+      +action : string
+      +target_type : string
+      +target_id : binary_id
+      +reason : string
+      +metadata : map = %｛｝
+      +inserted_at : utc_datetime_usec
+    }
+    class Reply["MlCommunity.Reply"] {
+      <<schema replies>>
+      +id : binary_id «PK»
+      +discussion_id : binary_id «FK»
+      +author_id : binary_id
+      +body : string
+      +status : string = "visible"
+      +helpful_count : integer = 0
+      +moderation_reason : string
+      +edited_at : utc_datetime_usec
+      +voted : boolean = false «virtual»
+      +inserted_at : utc_datetime_usec
+      +updated_at : utc_datetime_usec
+    }
+    class Report["MlCommunity.Report"] {
+      <<schema reports>>
+      +id : binary_id «PK»
+      +reporter_id : binary_id
+      +target_type : string
+      +target_id : Ecto.UUID
+      +reason : string
+      +details : string
+      +snapshot : map
+      +status : string = "open"
+      +resolution : string
+      +resolution_reason : string
+      +resolved_by : binary_id
+      +resolved_at : utc_datetime_usec
+      +target_status : string «virtual»
+      +inserted_at : utc_datetime_usec
+    }
+    class Vote["MlCommunity.Vote"] {
+      <<schema votes>>
+      +user_id : binary_id «PK»
+      +target_type : string «PK»
+      +target_id : binary_id «PK»
+      +inserted_at : utc_datetime_usec
+    }
+  }
+  namespace Modules_de_contexte {
+    class Forum["MlCommunity.Forum"] {
+      <<module>>
+      +categories()
+      +list_discussions(viewer, params)
+      +fetch_discussion(viewer, slug)
+      +list_replies(viewer, discussion, page)
+    }
+    class Posts["MlCommunity.Posts"] {
+      <<module>>
+      +create_discussion(viewer, attrs)
+      +update_discussion(viewer, slug, attrs)
+      +create_reply(viewer, slug, attrs)
+      +set_solution(viewer, slug, reply_id)
+      +follow(viewer, slug)
+    }
+    class Votes["MlCommunity.Votes"] {
+      <<module>>
+      +set(viewer, target, on?)
+    }
+    class Reports["MlCommunity.Reports"] {
+      <<module>>
+      +create(viewer, attrs)
+      +list_open(page)
+      +resolve(staff_id, report_id, params)
+    }
+    class Moderation["MlCommunity.Moderation"] {
+      <<module>>
+      +act(staff_id, type, id, params)
+      +log(staff_id, action, target_type, target_id, reason, metadata)
+    }
+  }
+  Category "1" -- "0..*" Discussion : FK category (champ simple)
+  Reply "0..1" -- "0..*" Discussion : FK solution_reply_id (champ simple)
+  Discussion "1" -- "0..*" Follow : FK discussion_id (champ simple)
+  Discussion "1" -- "0..*" Reply : belongs_to discussion
+  Forum ..> Category
+  Forum ..> Discussion
+  Forum ..> Reply
+  Posts ..> Discussion
+  Posts ..> Reply
+  Posts ..> Follow
+  Votes ..> Vote
+  Reports ..> Report
+  Moderation ..> ModerationEntry

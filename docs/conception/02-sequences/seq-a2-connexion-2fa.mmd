@@ -1,0 +1,98 @@
+%% Séquence a (2/2) : connexion par mot de passe puis double authentification (TOTP déjà activée), première page.
+%% Chaque « %% @ref » est contrôlé par e2e/tools/conception.mjs verifier (le texte doit figurer dans ces lignes).
+%% @titre Séquence a (2/2) — Connexion avec double authentification (TOTP), puis résolution de la session à chaque page
+%% @legende Hypothèse : le membre a déjà activé la 2FA (/settings/security). Sans 2FA, accounts crée la session dès l'étape 6 (réponse 201) et la phase « second facteur » n'a pas lieu.
+%% @legende Après un mot de passe correct, les refus passent dans cet ordre : suppression du compte en cours (403 account_deleted), e-mail non confirmé (403 unconfirmed), puis la 2FA. L'échec est compté AVANT bcrypt (étape 4) et effacé si le mot de passe est bon.
+%% @legende Jetons (challenge, session) : 32 octets aléatoires, seul le SHA-256 est en base. Le cookie de session de web (_mystic_web) est signé et chiffré, HttpOnly, SameSite=Lax. Tous les appels web → accounts portent le jeton interne HMAC.
+%% @legende Simplification : le code de récupération (variante de l'étape 10 : DELETE recovery_codes … RETURNING) n'est pas détaillé.
+%% @ref 1 src/web/lib/web_web/router.ex:49 | post "/login", SessionController, :create
+%% @ref 1 src/web/lib/web_web/controllers/session_controller.ex:26 | def create(conn, %{"user" => %{"email" => email, "password" => password} = params})
+%% @ref 2 src/web/lib/web_web/controllers/session_controller.ex:28 | RateLimit.check(conn, :login)
+%% @ref 3 src/web/lib/web_web/controllers/session_controller.ex:30-32 | MlShared.Client.post(:accounts, "/api/sessions",
+%% @ref 3 src/accounts/lib/accounts_web/controllers/session_controller.ex:9-10 | MlAccounts.login(params["email"], params["password"], client(conn))
+%% @ref 4 src/accounts/lib/accounts.ex:96-97 | Throttle.reserve(LoginFailure, :email, email, @max_failures, @failure_window_minutes)
+%% @ref 4 src/accounts/lib/accounts/throttle.ex:19-27 | pg_advisory_xact_lock(hashtext($1))
+%% @ref 5 src/accounts/lib/accounts.ex:98-101 | User.valid_password?(user, password)
+%% @ref 6 src/accounts/lib/accounts.ex:103-107 | TwoFactor.enabled?(user) -> {:two_factor, create_challenge(user), user}
+%% @ref 6 src/accounts/lib/accounts.ex:117-126 | Repo.insert!(%LoginChallenge{user_id: user.id, token_hash: token_hash})
+%% @ref 7 src/accounts/lib/accounts_web/controllers/session_controller.ex:14-15 | json(conn, %{two_factor_required: true, challenge: challenge})
+%% @ref 7 src/web/lib/web_web/controllers/session_controller.ex:38-39 | put_session(@challenge, challenge) |> redirect(to: ~p"/login/2fa")
+%% @ref 8 src/web/lib/web_web/routes/security.ex:9 | post "/login/2fa", SessionController, :create_two_factor
+%% @ref 8 src/web/lib/web_web/controllers/session_controller.ex:73-78 | MlShared.Client.post(:accounts, "/api/sessions/2fa",
+%% @ref 8 src/accounts/lib/accounts_web/controllers/session_controller.ex:22-23 | MlAccounts.complete_two_factor_login(params["challenge"], params["code"], client(conn))
+%% @ref 9 src/accounts/lib/accounts.ex:131-139 | Repo.update_all(attempt, inc: [attempts: 1])
+%% @ref 9 src/accounts/lib/accounts.ex:28-29 | @challenge_attempts 5
+%% @ref 10 src/accounts/lib/accounts/two_factor.ex:136-137 | with :ok <- reserve_attempt(user) do
+%% @ref 10 src/accounts/lib/accounts/two_factor.ex:196-197 | Throttle.reserve(throttle_key(user), @max_failures, @failure_window_minutes)
+%% @ref 11 src/accounts/lib/accounts/two_factor.ex:158-160 | decrypt(user.totp_secret, user.id)
+%% @ref 11 src/accounts/lib/accounts/two_factor.ex:253-254 | :crypto.crypto_one_time_aead(:aes_256_gcm, key(), iv, ciphertext, user_id, tag, false)
+%% @ref 11 src/accounts/lib/accounts/two_factor.ex:185-189 | NimbleTOTP.valid?(secret, code, time: step * @period)
+%% @ref 12 src/accounts/lib/accounts/two_factor.ex:161-167 | set: [totp_last_step: step]
+%% @ref 13 src/accounts/lib/accounts.ex:151 | Repo.delete_all(from c in LoginChallenge, where: c.id == ^challenge.id)
+%% @ref 14 src/accounts/lib/accounts.ex:161-178 | Repo.insert!(%Session{
+%% @ref 15 src/web/lib/web_web/controllers/session_controller.ex:122-129 | Auth.after_login_path(user, get_session(conn, @return_to))
+%% @ref 15 src/web/lib/web_web/auth.ex:44-67 | configure_session(renew: true)
+%% @ref 16 src/web/lib/web_web/auth.ex:94-99 | def on_mount(:require_user, _params, session, socket) do
+%% @ref 17 src/web/lib/web_web/auth.ex:15-16 | Api.current_session(token)
+%% @ref 18 src/accounts/lib/accounts.ex:217-224 | Repo.update_all(valid, set: [last_used_at: DateTime.utc_now(:second)])
+%% @ref 18 src/accounts/lib/accounts.ex:24 | @session_days 30
+sequenceDiagram
+  actor U as Membre
+  participant N as Navigateur
+  participant W as web (BFF :4000)
+  box service accounts (:4001)
+    participant A as accounts
+    participant DB as ml_accounts (PostgreSQL)
+  end
+
+  rect rgb(250,250,250)
+  Note over U,DB: Premier facteur : mot de passe
+  U->>N: saisit e-mail et mot de passe
+  N->>+W: 1 · POST /login (jeton CSRF)
+  W->>W: 2 · RateLimit.check(:login) — 10 / min par IP en production
+  W->>+A: 3 · POST /api/sessions {email, password} + x-client-ua, x-client-ip
+  A->>DB: 4 · Throttle.reserve : verrou consultatif, purge, compte (≥ 5 en 15 min → 429), INSERT login_failures
+  A->>DB: 5 · SELECT users — Bcrypt.verify_pass — si correct, DELETE login_failures
+  A->>DB: 6 · 2FA active : INSERT login_challenges (SHA-256), aucune session créée
+  A-->>-W: 7 · 200 {two_factor_required: true, challenge}
+  W-->>-N: 302 /login/2fa — challenge gardé dans le cookie de session, jamais dans l’URL
+  alt mot de passe faux ou e-mail inconnu
+    A-->>W: 401 invalid_credentials
+  else compte verrouillé (5 échecs / 15 min)
+    A-->>W: 429 locked (même avec le bon mot de passe)
+  else e-mail non confirmé / suppression échue
+    A-->>W: 403 unconfirmed / 403 account_deleted
+  end
+  end
+
+  rect rgb(250,250,250)
+  Note over U,DB: Second facteur : code TOTP (application d’authentification)
+  U->>N: saisit le code à 6 chiffres
+  N->>+W: 8 · POST /login/2fa {code} — RateLimit.check(:two_factor)
+  W->>+A: POST /api/sessions/2fa {challenge, code}
+  A->>DB: 9 · UPDATE login_challenges SET attempts + 1 WHERE haché, < 5 essais, < 5 min RETURNING
+  A->>DB: 10 · Throttle.reserve("totp:‹id›") — 5 codes faux / 15 min, tous challenges confondus
+  A->>A: 11 · déchiffre le secret (AES-256-GCM) — NimbleTOTP sur le pas courant ±1
+  A->>DB: 12 · UPDATE users SET totp_last_step (anti-rejeu : pas strictement plus récent)
+  A->>DB: 13 · DELETE login_challenges (un challenge n’ouvre qu’une session)
+  A->>DB: 14 · INSERT sessions (SHA-256 du jeton, appareil, IP anonymisée)
+  A-->>-W: 201 {session_token, user}
+  W->>W: 15 · Auth.log_in : session renouvelée (anti-fixation) — after_login_path
+  W-->>-N: 302 /welcome (accueil « pending ») ou /dashboard ou la page demandée
+  alt code faux, essais restants
+    A-->>W: 401 {invalid_code, attempts_left}
+  else challenge expiré, épuisé ou déjà utilisé
+    A-->>W: 404 not_found → retour à /login
+  else trop de codes faux
+    A-->>W: 429 locked → retour à /login
+  end
+  end
+
+  rect rgb(250,250,250)
+  Note over U,DB: Chaque page connectée (LiveView)
+  N->>+W: 16 · GET /dashboard — on_mount {MysticWeb.Auth, :require_user}
+  W->>+A: 17 · GET /api/sessions/current (en-tête x-session-token)
+  A->>DB: 18 · UPDATE sessions SET last_used_at WHERE haché ET utilisée depuis < 30 jours RETURNING
+  A-->>-W: 200 {user}
+  W-->>-N: page du membre (sinon 401 → /login?reason=expired)
+  end

@@ -1,0 +1,50 @@
+%% Cas d'utilisation — écran 10 « abonnement » (formules Free, Premium, VIP), paiement Stripe ou simulé local, webhooks signés.
+%% @titre Cas d’utilisation — Abonnement et paiement (écran 10)
+%% @legende Seul un événement signé (webhook Stripe, ou événement local signé par billing en mode simulé) modifie les droits ; l’URL de retour du paiement n’active rien. Stripe est ici un acteur PRINCIPAL : il déclenche lui-même le cas « Notifier un événement de paiement ».
+%% @legende Mode simulé local (défaut, sans clés) : la page /membership/local-checkout remplace Stripe Checkout ; le portail de facturation Stripe n’y existe pas. Aucune donnée de carte n’est stockée par MysticLore.
+%% @ref Souscrire src/web/lib/web_web/live/membership_live.ex:54 | def handle_event("checkout", %{"plan" => plan}, socket) when plan in ["premium", "vip"] do
+%% @ref Résilier src/web/lib/web_web/live/membership_live.ex:70-71 | "/api/me/subscription/#{action}"
+%% @ref Portail src/web/lib/web_web/live/membership_live.ex:92-93 | Api.post(socket, :billing, "/api/portal",
+%% @ref Simulé src/web/lib/web_web/live/local_checkout_live.ex:35 | def handle_event("simulate", %{"outcome" => outcome}, socket)
+%% @ref Webhook src/billing/lib/billing_web/router.ex:21 | post "/webhooks/stripe", WebhookController, :stripe
+%% @ref Retour src/web/lib/web_web/live/checkout_result_live.ex:48-50 | defp state(%{"status" => "completed"}, %{"plan" => plan}) when plan != "free", do: :active
+%% @ref Admin src/web/lib/web_web/live/admin/billing_live.ex:61-64 | def handle_event("adjust"
+usecase-beta
+  direction LR
+  actor Free(Membre Free)
+  actor Premium(Membre Premium)
+  actor Admin(Administrateur)
+  actor Stripe <<système externe>>
+  systemBoundary sys(MysticLore — abonnement)
+    FORM(Comparer les formules Free, Premium et VIP)
+    SOUS(Souscrire Premium ou VIP)
+    PAYER(Payer sur la page de paiement)
+    SIMU(Payer en mode simulé local)
+    WEBH(Notifier un événement de paiement signé)
+    DROITS(Mettre à jour les droits et les crédits IA)
+    CHANGE(Changer de formule)
+    RESIL(Résilier en fin de période ou reprendre)
+    PORTAIL(Gérer la facturation dans le portail Stripe)
+    FACT(Consulter ses factures et ses crédits)
+    ADMSUB(Consulter les abonnements et les webhooks en échec)
+    ADJ(Ajuster les crédits IA d’un membre)
+  end
+  Free -- FORM
+  Free -- SOUS
+  Premium -- FORM
+  Premium -- CHANGE
+  Premium -- RESIL
+  Premium -- PORTAIL
+  Premium -- FACT
+  Admin -- ADMSUB
+  Admin -- ADJ
+  SOUS ..>:include PAYER
+  SIMU ..>:extend PAYER
+  CHANGE ..>:include PAYER
+  WEBH ..>:include DROITS
+  Stripe -- PAYER
+  Stripe -- WEBH
+  Stripe -- PORTAIL
+  note for SIMU sans clés Stripe : événements signés par billing, même traitement
+  note for WEBH déclenché par Stripe ; signature vérifiée, doublons ignorés
+  note for PORTAIL mode Stripe seulement

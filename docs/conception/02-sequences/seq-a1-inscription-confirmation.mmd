@@ -1,0 +1,75 @@
+%% Séquence a (1/2) : inscription, e-mail de confirmation, confirmation du compte.
+%% Chaque « %% @ref » est contrôlé par e2e/tools/conception.mjs verifier (le texte doit figurer dans ces lignes).
+%% @titre Séquence a (1/2) — Inscription, e-mail de confirmation et confirmation du compte
+%% @legende Chaque appel web → accounts passe par MlShared.Client avec un jeton interne HMAC (Plug.Crypto, 5 min, signé « web ») vérifié par MlShared.Plug.Internal (pipeline :service) ; un POST n'est jamais rejoué.
+%% @legende En développement, l'adaptateur Swoosh.Adapters.Local garde l'e-mail dans la boîte /dev/mailbox d'accounts ; aucun fournisseur d'e-mail réel n'est configuré (à choisir pour la production).
+%% @legende Simplifications : les étapes de rendu HTML et le détail des validations (format, longueurs, mots réservés) sont résumés ; seuls les refus principaux figurent dans les fragments alt.
+%% @ref 1 src/web/lib/web_web/router.ex:52 | post "/register", RegistrationController, :create
+%% @ref 1 src/web/lib/web_web/controllers/registration_controller.ex:14 | def create(conn, %{"user" => %{} = params}) do
+%% @ref 2 src/web/lib/web_web/controllers/registration_controller.ex:23 | RateLimit.check(conn, :register)
+%% @ref 3 src/web/lib/web_web/controllers/registration_controller.ex:24 | MlShared.Client.post(:accounts, "/api/users", json: attrs)
+%% @ref 3 src/accounts/lib/accounts_web/router.ex:33 | post "/users", UserController, :create
+%% @ref 3 src/accounts/lib/accounts_web/controllers/user_controller.ex:7-8 | MlAccounts.register(params)
+%% @ref 4 src/accounts/lib/accounts/user.ex:71-76 | def registration_changeset(attrs) do
+%% @ref 4 src/accounts/lib/accounts/user.ex:190-194 | Bcrypt.hash_pwd_salt(password)
+%% @ref 5 src/accounts/lib/accounts.ex:37-38 | User.registration_changeset() |> Repo.insert()
+%% @ref 6 src/accounts/lib/accounts.ex:82-84 | Repo.insert!(%ConfirmationToken{user_id: user.id, token_hash: token_hash})
+%% @ref 6 src/accounts/lib/accounts.ex:554-559 | :crypto.hash(:sha256, token)
+%% @ref 7 src/accounts/lib/accounts.ex:85 | deliver(UserEmail.confirmation(user, token), user)
+%% @ref 7 src/accounts/lib/accounts.ex:546-547 | Mailer.deliver(email)
+%% @ref 7 src/accounts/lib/accounts/user_email.ex:5-13 | url("/confirm/#{token}")
+%% @ref 8 src/accounts/lib/accounts_web/controllers/user_controller.ex:9 | put_status(201)
+%% @ref 9 src/web/lib/web_web/controllers/registration_controller.ex:25 | render(conn, :check_email,
+%% @ref 10 src/web/lib/web_web/controllers/confirmation_controller.ex:11 | def show(conn, %{"token" => token}), do: render_confirm(conn, token, nil)
+%% @ref 11 src/web/lib/web_web/controllers/confirmation_controller.ex:13-14 | MlShared.Client.post(:accounts, "/api/users/confirm", json: %{token: token})
+%% @ref 11 src/accounts/lib/accounts_web/router.ex:35 | post "/users/confirm", UserController, :confirm
+%% @ref 12 src/accounts/lib/accounts.ex:45-53 | Repo.delete_all(valid)
+%% @ref 12 src/accounts/lib/accounts.ex:23 | @confirmation_days 7
+%% @ref 13 src/accounts/lib/accounts.ex:54-56 | User.confirm_changeset() |> Repo.update()
+%% @ref 14 src/web/lib/web_web/controllers/confirmation_controller.ex:15-18 | redirect(to: ~p"/login")
+sequenceDiagram
+  actor V as Visiteur
+  participant N as Navigateur
+  participant W as web (BFF :4000)
+  box service accounts (:4001)
+    participant A as accounts
+    participant DB as ml_accounts (PostgreSQL)
+  end
+  participant M as Mailer Swoosh
+
+  rect rgb(250,250,250)
+  Note over V,M: Inscription
+  V->>N: remplit le formulaire d’inscription
+  N->>+W: 1 · POST /register (e-mail, pseudonyme, mot de passe, jeton CSRF)
+  W->>W: 2 · RateLimit.check(:register) — limite par IP
+  W->>+A: 3 · POST /api/users (jeton interne HMAC)
+  A->>A: 4 · registration_changeset (validations) + Bcrypt.hash_pwd_salt
+  A->>DB: 5 · INSERT users
+  A->>A: 6a · jeton aléatoire (32 octets), seul son SHA-256 est gardé
+  A->>DB: 6b · INSERT confirmation_tokens (token_hash)
+  A->>M: 7 · Mailer.deliver — lien /confirm/‹jeton›, valable 7 jours
+  A-->>-W: 8 · 201 {user}
+  W-->>-N: 9 · 200 page « Check your email »
+  alt limite par IP dépassée
+    W-->>N: 429, formulaire réaffiché (accounts n’est pas appelé)
+  else validation refusée (format, doublon…)
+    A-->>W: 422 {errors}
+    W-->>N: 422, erreurs à côté des champs
+  end
+  end
+
+  rect rgb(250,250,250)
+  Note over V,M: Confirmation (le lien de l’e-mail)
+  V->>N: ouvre le lien reçu
+  N->>W: 10 · GET /confirm/‹jeton› : bouton seulement, aucun appel
+  N->>+W: 11 · POST /confirm/‹jeton› (bouton, jeton CSRF)
+  W->>+A: POST /api/users/confirm {token}
+  A->>DB: 12 · transaction : DELETE confirmation_tokens (jeton haché, < 7 jours) RETURNING user_id
+  A->>DB: 13 · DELETE autres jetons du membre, UPDATE users SET confirmed_at
+  A-->>-W: 200 {user}
+  W-->>-N: 14 · 302 /login (« Your account is confirmed »)
+  alt jeton inconnu, expiré ou déjà utilisé
+    A-->>W: 404 not_found (transaction annulée)
+    W-->>N: 404 « This link can’t be used » + renvoi du lien
+  end
+  end

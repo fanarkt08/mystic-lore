@@ -1,0 +1,86 @@
+%% Séquence d : envoi d'un message en temps réel — contrôles dans l'ordre du code, écriture, livraison par membre.
+%% Chaque « %% @ref » est contrôlé par e2e/tools/conception.mjs verifier (le texte doit figurer dans ces lignes).
+%% @titre Séquence d — Message en temps réel : contrôles dans l'ordre, écriture, livraison PAR MEMBRE
+%% @legende Ordre réel des contrôles (le premier refus arrête tout) : sanction (403 restricted, ou 503 si accounts est injoignable) → membre actuel (404) → débit (429) → blocage puis amitié, conversation directe seulement (403) → validation (422) → pièce jointe et antivirus (422, 503). Ils sont repris sous verrou à l'écriture (étape 10).
+%% @legende Livraison par membre : social lit les membres ACTUELS au moment de l'envoi et publie sur le sujet « user:‹id› » de chacun (aucun sujet « conversation:‹id› ») ; un membre retiré ne reçoit plus rien. Dans un groupe, un lecteur qui a un blocage avec l'expéditeur reçoit la forme « hidden » (ni texte, ni expéditeur, ni pièce jointe).
+%% @legende Le PubSub (Phoenix.PubSub, MlShared.PubSub) est partagé par le cluster Erlang des 9 nœuds : social publie, chaque processus LiveView du membre est abonné à « user:‹id› » depuis MysticWeb.Auth.
+%% @legende Simplifications : l'accusé de lecture (étape 18, puis {:messages_read}) et la notification ne sont pas détaillés ; un envoi refusé après le contrôle de débit reste compté (seul le refus 429 rend le compteur).
+%% @ref 1 src/web/lib/web_web/live/messages_live.ex:282-299 | def handle_event("send", %{"message" => params}, socket) do
+%% @ref 2 src/web/lib/web_web/live/messages_live.ex:307-312 | Api.post(:social, "/api/conversations/:id/messages",
+%% @ref 2 src/social/lib/social_web/router.ex:47 | post "/conversations/:id/messages", ConversationController, :send_message
+%% @ref 3 src/social/lib/social_web/controllers/conversation_controller.ex:29-31 | Accounts.check_not_restricted(conn.assigns.user_id)
+%% @ref 3 src/social/lib/social/accounts.ex:68-79 | {:error, :unavailable} ->
+%% @ref 4 src/social/lib/social/chat.ex:228 | with {:ok, conversation} <- membership(me, conversation_id),
+%% @ref 4 src/social/lib/social/chat.ex:383-392 | on: m.conversation_id == c.id and m.user_id == ^me,
+%% @ref 5 src/social/lib/social/chat.ex:229 | :ok <- RateLimit.hit(me),
+%% @ref 5 src/social/lib/social/rate_limit.ex:6-22 | @defaults [{20, 10_000}, {300, 3_600_000}]
+%% @ref 6 src/social/lib/social/chat.ex:230 | :ok <- allowed(conversation, me),
+%% @ref 6 src/social/lib/social/chat.ex:242-252 | not Friends.friends?(me, other) -> {:error, :not_friends}
+%% @ref 7 src/social/lib/social/chat.ex:232-233 | changeset = Message.changeset(message, params, not is_nil(attachment)),
+%% @ref 8 src/social/lib/social/chat.ex:234 | {:ok, file} <- Attachments.prepare(attachment),
+%% @ref 8 src/social/lib/social/attachments.ex:23-30 | {:ok, scan} <- scan(file.data) do
+%% @ref 9 src/social/lib/social/chat.ex:259-260 | key = Attachments.store!(file)
+%% @ref 10 src/social/lib/social/chat.ex:280-296 | lock: "FOR SHARE"
+%% @ref 10 src/social/lib/social/friends.ex:202-209 | if mode == :shared, do: "pg_advisory_xact_lock_shared", else: "pg_advisory_xact_lock"
+%% @ref 11 src/social/lib/social/chat.ex:262-276 | {:ok, attachment} <- Repo.insert(Attachments.row(file, key, message.id, me)) do
+%% @ref 12 src/social/lib/social/chat.ex:236 | Delivery.new_message(conversation, message)
+%% @ref 12 src/social/lib/social/delivery.ex:10-17 | order_by: [m.joined_at, m.user_id],
+%% @ref 13 src/social/lib/social/delivery.ex:40-51 | Events.broadcast(Events.user(id), {tag, map})
+%% @ref 14 src/social/lib/social/delivery.ex:22-26 | do: Events.broadcast(Events.user(id), {:unread_changed, id})
+%% @ref 15 src/social/lib/social/chat.ex:237 | MlSocial.Notify.new_message(conversation, message)
+%% @ref 15 src/social/lib/social/notify.ex:11-37 | not Member.muted?(member, now),
+%% @ref 16 src/social/lib/social_web/controllers/conversation_controller.ex:32 | conn |> put_status(:created) |> json(%{message: Message.to_map(message)})
+%% @ref 17 src/web/lib/web_web/live/messages_live.ex:490 | defp sent({:ok, %{"message" => %{"id" => _} = message}}, socket, _values) do
+%% @ref 18 src/web/lib/web_web/auth.ex:177-184 | MlShared.Events.subscribe(MlShared.Events.user(user["id"]))
+%% @ref 18 src/web/lib/web_web/live/messages_live.ex:199-222 | def handle_info({:new_message, %{"conversation_id" => id} = message}, socket) do
+%% @ref 19 src/web/lib/web_web/auth.ex:224-232 | defp user_event({tag, _user_id}, socket) when tag in [:unread_changed, :friendship_changed],
+%% @ref 20 src/web/lib/web_web/auth.ex:235-236 | socket |> load_notifications() |> show_toast(toast) |> continue()
+%% @ref 20 src/web/lib/web_web/live/messages_live.ex:20 | assign(toast_except: ["messages"])
+sequenceDiagram
+  participant N1 as Navigateur de A
+  participant W1 as web (LiveView de A)
+  box service social (:4004)
+    participant S as social
+    participant DB as ml_social (PostgreSQL)
+  end
+  participant AC as accounts
+  participant P as PubSub du cluster
+  participant W2 as web (LiveViews de B)
+  participant N2 as Navigateur de B
+  participant C as notifications
+
+  N1->>+W1: 1 · phx-submit « send » {body, alt} (+ fichier téléversé)
+  W1->>W1: texte vide, trop long (> 2 000) ou fichier en cours → refus local, aucun appel
+  W1->>+S: 2 · POST /api/conversations/‹id›/messages {body, attachment?} (jeton interne de A)
+  rect rgb(250,250,250)
+  Note over S,AC: Contrôles, dans l’ordre du code
+  S->>AC: 3 · sanction : restricted_until (cache 10 s,<br/>sinon GET /api/internal/users/‹id›)
+  S->>DB: 4 · A est-il membre ACTUEL de la conversation ?
+  S->>S: 5 · RateLimit.hit — ETS par nœud : 20 messages / 10 s et 300 / h
+  S->>DB: 6 · conversation directe : blocage (deux sens) puis amitié acceptée
+  S->>S: 7 · Message.changeset : texte 1 à 2 000 caractères, octet NUL refusé
+  S->>S: 8 · Attachments.prepare : octets magiques, métadonnées retirées,<br/>texte alternatif, antivirus (clamd si configuré)
+  end
+  alt refus
+    S-->>W1: 403 restricted · 503 accounts_unavailable · 404 · 429 {retry_after}<br/>403 blocked · 403 not_friends · 422 · 503 scanner_unavailable
+  end
+  opt pièce jointe
+    S->>S: 9 · fichier écrit sous SOCIAL_STORAGE_DIR AVANT la transaction<br/>(supprimé si elle échoue)
+  end
+  S->>DB: 10 · BEGIN — directe : pg_advisory_xact_lock_shared(paire),<br/>blocage et amitié revérifiés — groupe : ligne du membre FOR SHARE
+  S->>DB: 11 · INSERT messages (+ INSERT attachments) — COMMIT
+  S->>DB: 12 · Delivery : SELECT des membres actuels (et blocages avec A dans un groupe)
+  loop 13 · chaque membre, expéditeur compris
+    S->>P: {:new_message, forme vue par CE membre} sur « user:‹id› »
+  end
+  S->>P: 14 · {:unread_changed, id} sur « user:‹id› » de chaque autre membre
+  par 15 · au mieux (tâche hors requête, 6 essais)
+    S-)C: POST /api/internal/notifications (message_received)<br/>jamais le texte, rien en sourdine ni entre membres bloqués
+  end
+  S-->>-W1: 16 · 201 {message}
+  W1-->>-N1: 17 · message ajouté au fil, formulaire vidé
+  P-)W2: 18 · {:new_message} : ajout au fil ouvert,<br/>puis POST /read (accusé)
+  W2-->>N2: diff LiveView (role=log, aria-live)
+  P-)W2: 19 · {:unread_changed} : GET /api/me/unread (badges)
+  C-)P: {:notifications_changed, B, toast} sur « user:‹id de B› »
+  P-)W2: 20 · cloche mise à jour<br/>(pas de toast « messages » sur /messages)

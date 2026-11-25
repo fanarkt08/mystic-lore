@@ -1,0 +1,1454 @@
+{
+ "database": "ml_learning_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261123134433,
+  20261123153844,
+  20261123170000,
+  20261124090000,
+  20261124140000
+ ],
+ "tables": [
+  {
+   "table": "adventures",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "slug",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "summary",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "description",
+     "type": "text",
+     "not_null": true,
+     "default": "''::text"
+    },
+    {
+     "name": "category",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "difficulty",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "premium",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "duration_minutes",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "cover",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "objectives",
+     "type": "text[]",
+     "not_null": true,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "prerequisites",
+     "type": "text[]",
+     "not_null": true,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "source",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "external_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "imported_version",
+     "type": "integer",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "author_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "category_valid",
+     "type": "c",
+     "columns": [
+      "category"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((category)::text = ANY ((ARRAY['coding'::character varying, 'science'::character varying, 'humanities'::character varying, 'creative'::character varying])::text[])))"
+    },
+    {
+     "name": "cover_valid",
+     "type": "c",
+     "columns": [
+      "cover"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((cover)::text = ANY ((ARRAY['forest'::character varying, 'observatory'::character varying, 'alchemy'::character varying, 'archive'::character varying])::text[])))"
+    },
+    {
+     "name": "difficulty_valid",
+     "type": "c",
+     "columns": [
+      "difficulty"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((difficulty)::text = ANY ((ARRAY['beginner'::character varying, 'intermediate'::character varying, 'advanced'::character varying])::text[])))"
+    },
+    {
+     "name": "duration_positive",
+     "type": "c",
+     "columns": [
+      "duration_minutes"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((duration_minutes > 0))"
+    },
+    {
+     "name": "import_fields_consistent",
+     "type": "c",
+     "columns": [
+      "source",
+      "external_id",
+      "imported_version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((((source IS NULL) = (external_id IS NULL)) AND ((external_id IS NULL) = (imported_version IS NULL))))"
+    },
+    {
+     "name": "adventures_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "adventures_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "adventures_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX adventures_pkey ON public.adventures USING btree (id)"
+    },
+    {
+     "name": "adventures_slug_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX adventures_slug_index ON public.adventures USING btree (slug)"
+    },
+    {
+     "name": "adventures_source_external_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": "(external_id IS NOT NULL)",
+     "definition": "CREATE UNIQUE INDEX adventures_source_external_id_index ON public.adventures USING btree (source, external_id) WHERE (external_id IS NOT NULL)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "badges",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "slug",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "name",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "description",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "icon",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "rarity",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "criterion",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "param",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "target",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "criterion_valid",
+     "type": "c",
+     "columns": [
+      "criterion"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((criterion)::text = ANY ((ARRAY['lessons_completed'::character varying, 'lesson_completed'::character varying, 'adventures_completed'::character varying, 'total_xp'::character varying, 'level'::character varying, 'streak_days'::character varying, 'multiplayer_wins'::character varying])::text[])))"
+    },
+    {
+     "name": "icon_allowed",
+     "type": "c",
+     "columns": [
+      "icon"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((icon)::text = ANY ((ARRAY['hero-sparkles'::character varying, 'hero-sun'::character varying, 'hero-flag'::character varying, 'hero-star'::character varying, 'hero-bolt'::character varying, 'hero-academic-cap'::character varying, 'hero-trophy'::character varying, 'hero-fire'::character varying, 'hero-moon'::character varying, 'hero-users'::character varying, 'hero-book-open'::character varying, 'hero-shield-check'::character varying, 'hero-light-bulb'::character varying, 'hero-puzzle-piece'::character varying, 'hero-map'::character varying, 'hero-beaker'::character varying, 'hero-rocket-launch'::character varying, 'hero-pencil-square'::character varying])::text[])))"
+    },
+    {
+     "name": "rarity_valid",
+     "type": "c",
+     "columns": [
+      "rarity"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((rarity)::text = ANY ((ARRAY['common'::character varying, 'uncommon'::character varying, 'rare'::character varying, 'epic'::character varying, 'legendary'::character varying])::text[])))"
+    },
+    {
+     "name": "target_positive",
+     "type": "c",
+     "columns": [
+      "target"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((target > 0))"
+    },
+    {
+     "name": "badges_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "badges_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "badges_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX badges_pkey ON public.badges USING btree (id)"
+    },
+    {
+     "name": "badges_slug_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX badges_slug_index ON public.badges USING btree (slug)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "chapters",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "adventure_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "chapters_adventure_id_fkey",
+     "type": "f",
+     "columns": [
+      "adventure_id"
+     ],
+     "ref_table": "adventures",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "chapters_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "chapters_adventure_id_position_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX chapters_adventure_id_position_index ON public.chapters USING btree (adventure_id, \"position\")"
+    },
+    {
+     "name": "chapters_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "chapters_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX chapters_pkey ON public.chapters USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "enrollments",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "adventure_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "last_lesson_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "completed_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "enrollments_adventure_id_fkey",
+     "type": "f",
+     "columns": [
+      "adventure_id"
+     ],
+     "ref_table": "adventures",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (adventure_id) REFERENCES adventures(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "enrollments_last_lesson_id_fkey",
+     "type": "f",
+     "columns": [
+      "last_lesson_id"
+     ],
+     "ref_table": "lessons",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "n",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (last_lesson_id) REFERENCES lessons(id) ON DELETE SET NULL"
+    },
+    {
+     "name": "enrollments_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "enrollments_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "enrollments_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX enrollments_pkey ON public.enrollments USING btree (id)"
+    },
+    {
+     "name": "enrollments_user_id_adventure_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX enrollments_user_id_adventure_id_index ON public.enrollments USING btree (user_id, adventure_id)"
+    },
+    {
+     "name": "enrollments_user_id_updated_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX enrollments_user_id_updated_at_index ON public.enrollments USING btree (user_id, updated_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "idempotent_actions",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "key",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lesson_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "action",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "request_hash",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "response",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "action_valid",
+     "type": "c",
+     "columns": [
+      "action"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((action)::text = ANY ((ARRAY['submit'::character varying, 'complete'::character varying])::text[])))"
+    },
+    {
+     "name": "idempotent_actions_lesson_id_fkey",
+     "type": "f",
+     "columns": [
+      "lesson_id"
+     ],
+     "ref_table": "lessons",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "idempotent_actions_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "idempotent_actions_lesson_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX idempotent_actions_lesson_id_index ON public.idempotent_actions USING btree (lesson_id)"
+    },
+    {
+     "name": "idempotent_actions_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "idempotent_actions_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX idempotent_actions_pkey ON public.idempotent_actions USING btree (id)"
+    },
+    {
+     "name": "idempotent_actions_user_id_key_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX idempotent_actions_user_id_key_index ON public.idempotent_actions USING btree (user_id, key)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "lesson_progress",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lesson_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'in_progress'::character varying"
+    },
+    {
+     "name": "attempts",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "notes",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "draft",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "completed_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "notes_saved_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "attempts_nonneg",
+     "type": "c",
+     "columns": [
+      "attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((attempts >= 0))"
+    },
+    {
+     "name": "status_valid",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['in_progress'::character varying, 'completed'::character varying])::text[])))"
+    },
+    {
+     "name": "lesson_progress_lesson_id_fkey",
+     "type": "f",
+     "columns": [
+      "lesson_id"
+     ],
+     "ref_table": "lessons",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lesson_progress_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lesson_progress_lesson_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lesson_progress_lesson_id_index ON public.lesson_progress USING btree (lesson_id)"
+    },
+    {
+     "name": "lesson_progress_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lesson_progress_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lesson_progress_pkey ON public.lesson_progress USING btree (id)"
+    },
+    {
+     "name": "lesson_progress_user_id_lesson_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lesson_progress_user_id_lesson_id_index ON public.lesson_progress USING btree (user_id, lesson_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "lessons",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "chapter_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": "''::text"
+    },
+    {
+     "name": "content",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "solution",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "xp_reward",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "revision",
+     "type": "integer",
+     "not_null": true,
+     "default": "1"
+    },
+    {
+     "name": "revised_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": "now()"
+    }
+   ],
+   "constraints": [
+    {
+     "name": "kind_valid",
+     "type": "c",
+     "columns": [
+      "kind"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((kind)::text = ANY ((ARRAY['story'::character varying, 'exercise'::character varying, 'coding'::character varying, 'video'::character varying, 'simulation'::character varying, 'minigame'::character varying])::text[])))"
+    },
+    {
+     "name": "revision_positive",
+     "type": "c",
+     "columns": [
+      "revision"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((revision > 0))"
+    },
+    {
+     "name": "xp_reward_positive",
+     "type": "c",
+     "columns": [
+      "xp_reward"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((xp_reward > 0))"
+    },
+    {
+     "name": "lessons_chapter_id_fkey",
+     "type": "f",
+     "columns": [
+      "chapter_id"
+     ],
+     "ref_table": "chapters",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lessons_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lessons_chapter_id_position_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lessons_chapter_id_position_index ON public.lessons USING btree (chapter_id, \"position\")"
+    },
+    {
+     "name": "lessons_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lessons_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lessons_pkey ON public.lessons USING btree (id)"
+    }
+   ],
+   "triggers": [
+    {
+     "name": "lessons_track_revision",
+     "definition": "CREATE TRIGGER lessons_track_revision BEFORE INSERT OR UPDATE ON public.lessons FOR EACH ROW EXECUTE FUNCTION lessons_track_revision()"
+    }
+   ]
+  },
+  {
+   "table": "quests",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "slug",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "description",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "xp_reward",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "kind_valid",
+     "type": "c",
+     "columns": [
+      "kind"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((kind)::text = ANY ((ARRAY['lessons_completed'::character varying, 'xp_earned'::character varying, 'note_written'::character varying])::text[])))"
+    },
+    {
+     "name": "target_positive",
+     "type": "c",
+     "columns": [
+      "target"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((target > 0))"
+    },
+    {
+     "name": "xp_reward_range",
+     "type": "c",
+     "columns": [
+      "xp_reward"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((xp_reward >= 1) AND (xp_reward <= 500)))"
+    },
+    {
+     "name": "quests_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "quests_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "quests_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX quests_pkey ON public.quests USING btree (id)"
+    },
+    {
+     "name": "quests_slug_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX quests_slug_index ON public.quests USING btree (slug)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "user_badges",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "badge_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "earned_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "equipped",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "position",
+     "type": "integer",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "equipped_position",
+     "type": "c",
+     "columns": [
+      "equipped",
+      "position"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((equipped AND (\"position\" IS NOT NULL) AND ((\"position\" >= 1) AND (\"position\" <= 3))) OR ((NOT equipped) AND (\"position\" IS NULL))))"
+    },
+    {
+     "name": "user_badges_badge_id_fkey",
+     "type": "f",
+     "columns": [
+      "badge_id"
+     ],
+     "ref_table": "badges",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (badge_id) REFERENCES badges(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "user_badges_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "user_badges_badge_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX user_badges_badge_id_index ON public.user_badges USING btree (badge_id)"
+    },
+    {
+     "name": "user_badges_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "user_badges_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX user_badges_pkey ON public.user_badges USING btree (id)"
+    },
+    {
+     "name": "user_badges_user_id_badge_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX user_badges_user_id_badge_id_index ON public.user_badges USING btree (user_id, badge_id)"
+    },
+    {
+     "name": "user_badges_user_id_position_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX user_badges_user_id_position_index ON public.user_badges USING btree (user_id, \"position\")"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "xp_events",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "ref_key",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "amount",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "amount_positive",
+     "type": "c",
+     "columns": [
+      "amount"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((amount > 0))"
+    },
+    {
+     "name": "xp_events_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "xp_events_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "xp_events_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX xp_events_pkey ON public.xp_events USING btree (id)"
+    },
+    {
+     "name": "xp_events_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX xp_events_user_id_inserted_at_index ON public.xp_events USING btree (user_id, inserted_at)"
+    },
+    {
+     "name": "xp_events_user_id_ref_key_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX xp_events_user_id_ref_key_index ON public.xp_events USING btree (user_id, ref_key)"
+    }
+   ],
+   "triggers": null
+  }
+ ]
+}

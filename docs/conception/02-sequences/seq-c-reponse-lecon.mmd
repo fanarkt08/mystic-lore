@@ -1,0 +1,95 @@
+%% Séquence c : réponse à une leçon (quiz « exercise »), correction côté serveur, XP attribuée une seule fois.
+%% Chaque « %% @ref » est contrôlé par e2e/tools/conception.mjs verifier (le texte doit figurer dans ces lignes).
+%% @titre Séquence c — Réponse à une leçon : correction côté serveur, XP attribuée une seule fois
+%% @legende La page n'a jamais la solution : GET /api/lessons/:id ne sérialise que content (LessonJSON) ; la correction (Grader) se fait dans learning sur lessons.solution.
+%% @legende XP unique : index unique xp_events (user_id, ref_key) et INSERT … ON CONFLICT DO NOTHING ; ref_key = « lesson:‹id› » (xp_reward de la leçon) ou « adventure:‹id› » (bonus de 50). Une seconde bonne réponse compte une tentative mais rend xp = « duplicate ». L'upsert de l'inscription verrouille sa ligne : deux réponses simultanées d'un membre dans la même aventure sont sérialisées.
+%% @legende learning ne publie aucun événement PubSub ; seule la notification « badge_earned », envoyée au mieux (tâche hors requête, 6 essais), aboutit à un événement publié par le centre de notifications.
+%% @legende Simplifications : les formats coding, simulation et mini-jeu suivent le même chemin avec un autre correcteur ; les erreurs 401 et 404 ne sont pas représentées.
+%% @ref 0 src/learning/lib/learning_web/controllers/lesson_json.ex:2-3 | `solution` (réponse attendue, critère d'une simulation, ordre d'un
+%% @ref 1 src/web/lib/web_web/live/learn_live.ex:118-119 | def handle_event("check", %{"answer" => answer}, socket) when answer not in [nil, ""],
+%% @ref 2 src/web/lib/web_web/live/learn_live.ex:271-275 | Api.post(socket, :learning, "/api/lessons/:id/submit",
+%% @ref 2 src/learning/lib/learning_web/router.ex:44 | post "/lessons/:id/submit", LessonController, :submit
+%% @ref 3 src/learning/lib/learning_web/controllers/lesson_controller.ex:101-105 | Entitlements.check(lesson.chapter.adventure, conn.assigns.user_id)
+%% @ref 3 src/learning/lib/learning/catalog.ex:89-93 | preload: [chapter: :adventure]
+%% @ref 4 src/learning/lib/learning/entitlements.ex:15-23 | {:ok, false} -> {:error, :premium_required}
+%% @ref 4 src/learning/lib/learning/entitlements.ex:26-33 | [{_, premium, expires_at}] when expires_at > now -> {:ok, premium}
+%% @ref 4 src/learning/lib/learning/entitlements.ex:36-41 | MlShared.Client.get(:billing, "/api/entitlements/" <> URI.encode_www_form(user_id))
+%% @ref 4 src/learning/lib/learning_web/controllers/fallback_controller.ex:5-8 | entitlements_unavailable: 503,
+%% @ref 5 src/learning/lib/learning_web/controllers/lesson_controller.ex:35-43 | if(lesson.kind in @answered,
+%% @ref 5 src/learning/lib/learning_web/controllers/lesson_controller.ex:107-112 | byte_size(value) > 20_000 -> invalid(:answer, "is too long")
+%% @ref 6 src/learning/lib/learning_web/controllers/lesson_controller.ex:44-47 | else: submit_now(conn, lesson, answer)
+%% @ref 7 src/learning/lib/learning/grader.ex:14-25 | expected = solution["answer"]
+%% @ref 8 src/learning/lib/learning/progress.ex:74-76 | Repo.transact(fn -> record_submit(user_id, lesson, correct?) end)
+%% @ref 8 src/learning/lib/learning/progress.ex:128-151 | conflict_target: [:user_id, :adventure_id]
+%% @ref 9 src/learning/lib/learning/progress.ex:86-92 | inc: [attempts: 1],
+%% @ref 10 src/learning/lib/learning/progress.ex:154-161 | xp = award_xp(user_id, "lesson:#{lesson.id}", lesson.xp_reward)
+%% @ref 10 src/learning/lib/learning/progress.ex:208-224 | conflict_target: [:user_id, :ref_key]
+%% @ref 11 src/learning/lib/learning/progress.ex:163-170 | award_xp(user_id, "adventure:#{adventure_id}", @adventure_bonus)
+%% @ref 12 src/learning/lib/learning/progress.ex:104-107 | Gamification.after_xp(user_id)
+%% @ref 12 src/learning/lib/learning/gamification.ex:9-11 | Badges.award(user_id, today)
+%% @ref 12 src/learning/lib/learning/gamification/badges.ex:55-60 | conflict_target: [:user_id, :badge_id],
+%% @ref 13 src/learning/lib/learning/gamification/badges.ex:29-38 | kind: "badge_earned",
+%% @ref 14 src/learning/lib/learning_web/controllers/lesson_controller.ex:51-55 | json(conn, Map.put(result, :xp, xp))
+%% @ref 15 src/web/lib/web_web/live/learn_live.ex:279-292 | if(result.correct, do: socket |> assign(completed: true) |> load_outline(), else: socket)
+%% @ref 16 src/learning/lib/learning/offline.ex:119-150 | case claim(user_id, key, lesson_id, action, hash) do
+%% @ref 16 src/learning/lib/learning_web/controllers/fallback_controller.ex:20-22 | json(%{error: "lesson_changed", revision: revision})
+sequenceDiagram
+  actor U as Membre
+  participant N as Navigateur
+  participant W as web (LearnLive)
+  box service learning (:4002)
+    participant L as learning
+    participant DB as ml_learning (PostgreSQL)
+  end
+  participant B as billing
+  participant C as notifications
+
+  Note over N,L: 0 · Au chargement : GET /api/lessons/:id ne renvoie que le contenu public (question, choix), jamais la solution
+  U->>N: choisit une réponse, « Check »
+  N->>+W: 1 · phx-submit « check » {answer}
+  W->>+L: 2 · POST /api/lessons/‹id›/submit {answer} (jeton interne du membre)
+  L->>DB: 3 · SELECT lessons + chapitre + aventure (lessons.solution comprise)
+  alt aventure premium
+    L->>L: 4 · Entitlements.check : cache ETS de 30 s
+    opt cache absent ou expiré
+      L->>+B: GET /api/entitlements/‹user_id›
+      B-->>-L: {plan, status} → premium si plan ∈ {premium, vip} et status ∈ {active, past_due}
+    end
+  end
+  alt formule insuffisante
+    L-->>W: 402 premium_required
+  else billing injoignable (jamais d’ouverture par défaut)
+    L-->>W: 503 entitlements_unavailable
+  end
+  L->>L: 5 · sorte ∈ {exercise, coding, simulation, minigame} (sinon 422), réponse non vide ≤ 20 000 octets
+  L->>L: 6 · pas de clé d’idempotence : traitement en ligne
+  L->>L: 7 · Grader.grade : choix comparé à solution["answer"], retour = explication ou indice
+  L->>DB: 8 · BEGIN — upsert enrollments (verrou de la ligne), INSERT lesson_progress ON CONFLICT DO NOTHING
+  L->>DB: 9 · UPDATE lesson_progress SET attempts = attempts + 1
+  opt réponse correcte
+    L->>DB: 10 · UPDATE lesson_progress → completed — INSERT xp_events « lesson:‹id› » ON CONFLICT DO NOTHING
+    Note right of DB: 1 ligne insérée → xp « awarded », 0 → « duplicate »
+    opt toutes les leçons de l’aventure sont terminées
+      L->>DB: 11 · INSERT xp_events « adventure:‹id› » (+50) — UPDATE enrollments SET completed_at
+    end
+  end
+  L->>DB: COMMIT
+  opt xp = awarded (après le COMMIT, avant la réponse)
+    L->>DB: 12 · Gamification.after_xp : quêtes du jour, puis INSERT user_badges … ON CONFLICT DO NOTHING RETURNING
+    par pour chaque badge réellement gagné, au mieux
+      L-)C: 13 · POST /api/internal/notifications (learning, badge_earned, dedupe badge:‹slug›)
+    end
+  end
+  L-->>-W: 14 · 200 {correct, feedback, xp: awarded | duplicate | none, trace}
+  W-->>-N: 15 · bandeau « Well done! » + « +N XP » (ou « XP granted once »), plan de l’aventure rechargé si correct
+
+  opt 16 · rejeu d’une réponse faite hors ligne (même route, avec idempotency_key et revision)
+    L->>DB: BEGIN — INSERT idempotent_actions … ON CONFLICT (user_id, key) DO NOTHING
+    alt clé nouvelle
+      L->>DB: SELECT lessons … FOR SHARE — révision différente → 409 lesson_changed
+      L->>DB: correction et progression (étapes 7 à 11), puis UPDATE idempotent_actions SET response
+    else clé déjà vue, même demande
+      L->>L: reçu rendu tel quel (replayed: true), rien n’est recompté
+    end
+    L->>DB: COMMIT
+  end

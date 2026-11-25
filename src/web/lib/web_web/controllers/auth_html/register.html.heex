@@ -1,0 +1,63 @@
+<.auth_shell
+  flash={@flash}
+  eyebrow={gettext("Join the academy")}
+  title={gettext("Create your account")}
+>
+  <:lead>
+    {gettext("One account for every adventure, your progress and your friends.")}
+  </:lead>
+
+  <.notice :if={@message} id="register-error" kind="danger" role="alert">{@message}</.notice>
+
+  <.form for={@form} action={~p"/register"} id="register-form" class="space-y-4">
+    <.input
+      field={@form[:email]}
+      type="email"
+      label={gettext("Email")}
+      autocomplete="email"
+      required
+    />
+    <.input
+      field={@form[:username]}
+      label={gettext("Username")}
+      hint={gettext("3 to 24 characters: lowercase letters, digits or underscores.")}
+      autocomplete="username"
+      autocapitalize="none"
+      spellcheck="false"
+      pattern="[a-z0-9_]{3,24}"
+      required
+    />
+    <.input
+      field={@form[:display_name]}
+      label={gettext("Display name (optional)")}
+      autocomplete="nickname"
+    />
+    <.input
+      field={@form[:password]}
+      type="password"
+      label={gettext("Password")}
+      hint={gettext("At least 12 characters.")}
+      autocomplete="new-password"
+      minlength="12"
+      required
+    />
+    <.button type="submit" class="w-full">{gettext("Create my account")}</.button>
+  </.form>
+
+  <p class="text-sm text-muted">
+    {gettext("Already a member?")}
+    <.link href={~p"/login"} class="link">{gettext("Log in")}</.link>
+  </p>
+  <p id="register-legal" class="text-sm text-muted">
+    {gettext("Before creating your account, please read the")}
+    <.link navigate={~p"/legal/terms"} class="link" id="register-terms">{gettext("terms of use")}</.link>
+    {gettext("and the")}
+    <.link navigate={~p"/legal/privacy"} class="link" id="register-privacy">
+      {gettext("privacy notice")}
+    </.link>
+    {gettext("(provisional texts).")}
+  </p>
+  <p class="text-xs text-muted">
+    {gettext("MysticLore is a demonstration: adventures, members and payments are fictional.")}
+  </p>
+</.auth_shell>

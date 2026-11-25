@@ -1,0 +1,157 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_learning_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_learning_dev (service learning) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 5 migrations appliquées, dernière : 20261124140000) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_learning_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • adventures — category_valid : category IN ('coding', 'science', 'humanities', 'creative')
+%% @legende • adventures — cover_valid : cover IN ('forest', 'observatory', 'alchemy', 'archive')
+%% @legende • adventures — difficulty_valid : difficulty IN ('beginner', 'intermediate', 'advanced')
+%% @legende • adventures — duration_positive : duration_minutes > 0
+%% @legende • adventures — import_fields_consistent : ((source IS NULL) = (external_id IS NULL)) AND ((external_id IS NULL) = (imported_version IS NULL))
+%% @legende • badges — criterion_valid : criterion IN ('lessons_completed', 'lesson_completed', 'adventures_completed', 'total_xp', 'level', 'streak_days', 'multiplayer_wins')
+%% @legende • badges — icon_allowed : icon IN ('hero-sparkles', 'hero-sun', 'hero-flag', 'hero-star', 'hero-bolt', 'hero-academic-cap', 'hero-trophy', 'hero-fire', 'hero-moon', 'hero-users', 'hero-book-open', 'hero-shield-check', 'hero-light-bulb', 'hero-puzzle-piece', 'hero-map', 'hero-beaker', 'hero-rocket-launch', 'hero-pencil-square')
+%% @legende • badges — rarity_valid : rarity IN ('common', 'uncommon', 'rare', 'epic', 'legendary')
+%% @legende • badges — target_positive : target > 0
+%% @legende • idempotent_actions — action_valid : action IN ('submit', 'complete')
+%% @legende • lesson_progress — attempts_nonneg : attempts >= 0
+%% @legende • lesson_progress — status_valid : status IN ('in_progress', 'completed')
+%% @legende • lessons — kind_valid : kind IN ('story', 'exercise', 'coding', 'video', 'simulation', 'minigame')
+%% @legende • lessons — revision_positive : revision > 0
+%% @legende • lessons — xp_reward_positive : xp_reward > 0
+%% @legende • quests — kind_valid : kind IN ('lessons_completed', 'xp_earned', 'note_written')
+%% @legende • quests — target_positive : target > 0
+%% @legende • quests — xp_reward_range : (xp_reward >= 1) AND (xp_reward <= 500)
+%% @legende • user_badges — equipped_position : (equipped AND ("position" IS NOT NULL) AND (("position" >= 1) AND ("position" <= 3))) OR ((NOT equipped) AND ("position" IS NULL))
+%% @legende • xp_events — amount_positive : amount > 0
+%% @legende Index uniques partiels ou sur expression :
+%% @legende • adventures — adventures_source_external_id_index : UNIQUE (source, external_id) WHERE external_id IS NOT NULL
+%% @legende Déclencheurs :
+%% @legende • lessons — lessons_track_revision (BEFORE INSERT OR UPDATE, lessons_track_revision()) : fixe revision = 1 à l'insertion ; +1 et revised_at = now() si titre, sorte, texte, contenu ou solution changent
+erDiagram
+  direction LR
+  adventures {
+    uuid id PK
+    varchar(255) slug UK "NN"
+    varchar(255) title "NN"
+    text summary "NN"
+    text description "NN · déf. ''"
+    varchar(255) category "NN"
+    varchar(255) difficulty "NN"
+    boolean premium "NN · déf. false"
+    integer duration_minutes "NN"
+    varchar(255) cover "NN"
+    text[] objectives "NN · déf. ARRAY[]"
+    text[] prerequisites "NN · déf. ARRAY[]"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+    varchar(255) source "UQ partiel (source, external_id) WHERE external_id IS NOT NULL"
+    uuid external_id "UQ partiel (source, external_id) WHERE external_id IS NOT NULL · ⇢ studio.projects si source = 'studio'"
+    integer imported_version
+    uuid author_id "⇢ accounts.users"
+  }
+  badges {
+    uuid id PK
+    varchar(255) slug UK "NN"
+    varchar(255) name "NN"
+    text description "NN"
+    varchar(255) icon "NN"
+    varchar(255) rarity "NN"
+    varchar(255) criterion "NN"
+    varchar(255) param
+    integer target "NN"
+    integer position "NN"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  chapters {
+    uuid id PK
+    uuid adventure_id FK, UK "NN · → adventures.id CASCADE · UQ (adventure_id, position)"
+    integer position UK "NN · UQ (adventure_id, position)"
+    varchar(255) title "NN"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  enrollments {
+    uuid id PK
+    uuid user_id UK "NN · UQ (user_id, adventure_id) · ⇢ accounts.users"
+    uuid adventure_id FK, UK "NN · → adventures.id CASCADE · UQ (user_id, adventure_id)"
+    uuid last_lesson_id FK "→ lessons.id SET NULL"
+    timestamp(0) completed_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  idempotent_actions {
+    uuid id PK
+    uuid user_id UK "NN · UQ (user_id, key) · ⇢ accounts.users"
+    uuid key UK "NN · UQ (user_id, key)"
+    uuid lesson_id FK "NN · → lessons.id CASCADE"
+    varchar(255) action "NN"
+    varchar(255) request_hash "NN"
+    jsonb response "NN · déf. '{}'"
+    timestamp(0) inserted_at "NN"
+  }
+  lesson_progress {
+    uuid id PK
+    uuid user_id UK "NN · UQ (user_id, lesson_id) · ⇢ accounts.users"
+    uuid lesson_id FK, UK "NN · → lessons.id CASCADE · UQ (user_id, lesson_id)"
+    varchar(255) status "NN · déf. 'in_progress'"
+    integer attempts "NN · déf. 0"
+    text notes
+    text draft
+    timestamp(0) completed_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+    timestamp(0) notes_saved_at
+  }
+  lessons {
+    uuid id PK
+    uuid chapter_id FK, UK "NN · → chapters.id CASCADE · UQ (chapter_id, position)"
+    integer position UK "NN · UQ (chapter_id, position)"
+    varchar(255) title "NN"
+    varchar(255) kind "NN"
+    text body "NN · déf. ''"
+    jsonb content "NN · déf. '{}'"
+    jsonb solution "NN · déf. '{}'"
+    integer xp_reward "NN"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+    integer revision "NN · déf. 1"
+    timestamp(0) revised_at "NN · déf. now()"
+  }
+  quests {
+    uuid id PK
+    varchar(255) slug UK "NN"
+    varchar(255) title "NN"
+    text description "NN"
+    varchar(255) kind "NN"
+    integer target "NN"
+    integer xp_reward "NN"
+    integer position "NN"
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  user_badges {
+    uuid id PK
+    uuid user_id UK "NN · UQ (user_id, badge_id) · UQ (user_id, position) · ⇢ accounts.users"
+    uuid badge_id FK, UK "NN · → badges.id CASCADE · UQ (user_id, badge_id)"
+    timestamp(0) earned_at "NN"
+    boolean equipped "NN · déf. false"
+    integer position UK "UQ (user_id, position)"
+  }
+  xp_events {
+    uuid id PK
+    uuid user_id UK "NN · UQ (user_id, ref_key) · ⇢ accounts.users"
+    varchar(255) ref_key UK "NN · UQ (user_id, ref_key)"
+    integer amount "NN"
+    timestamp(0) inserted_at "NN"
+  }
+  adventures ||..o{ chapters : "adventure_id"
+  adventures ||..o{ enrollments : "adventure_id"
+  lessons |o..o{ enrollments : "last_lesson_id"
+  lessons ||..o{ idempotent_actions : "lesson_id"
+  lessons ||..o{ lesson_progress : "lesson_id"
+  chapters ||..o{ lessons : "chapter_id"
+  badges ||..o{ user_badges : "badge_id"

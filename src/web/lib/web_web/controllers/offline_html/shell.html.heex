@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang={@locale} {@html_attrs}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content={@color_scheme} />
+    <meta name="theme-color" content="#090E20" />
+    <title>{gettext("Offline lessons")} · MysticLore</title>
+    <link rel="manifest" href={~p"/manifest.webmanifest"} />
+    <link rel="icon" type="image/png" href={~p"/icons/icon-192.png"} />
+    <link
+      rel="preload"
+      href={~p"/fonts/inter-latin-400-normal.woff2"}
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href={~p"/assets/css/app.css"} />
+    <script defer type="text/javascript" src={~p"/assets/js/app.js"}>
+    </script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">{gettext("Skip to content")}</a>
+    <div class="flex min-h-dvh flex-col">
+      <header class="public-header">
+        <div class="container-wide flex h-18 items-center justify-between gap-3">
+          <span class="flex min-w-0 items-center gap-2">
+            <Layouts.brand_mark />
+            <span class="truncate font-display text-2xl text-ink">MysticLore</span>
+          </span>
+          <p id="offline-network" class="offline-network" role="status" aria-live="polite"></p>
+          <nav aria-label={gettext("Help")}>
+            <a href="/help" class="nav-pill inline-flex" id="offline-help">{gettext("Help center")}</a>
+          </nav>
+        </div>
+      </header>
+      <main id="main" class="page flex-1">
+        <div
+          id="offline-app"
+          class="offline-app"
+          data-texts={@texts}
+          data-locale={@locale}
+          data-time-zone={@time_zone}
+          data-offline-ok
+        >
+          <.page_header eyebrow={gettext("On this device")} title={gettext("Offline lessons")}>
+            {gettext(
+              "The premium stories and quizzes you made available offline, readable without a connection. Answers given here wait on this device until the server checks them."
+            )}
+          </.page_header>
+
+          <noscript>
+            <.notice kind="warning" title={gettext("JavaScript is needed")}>
+              {gettext(
+                "Offline lessons are kept by this browser's scripts: turn JavaScript on to read them."
+              )}
+            </.notice>
+          </noscript>
+
+          <.notice id="offline-page-unavailable" kind="warning" hidden>
+            <span id="offline-page-unavailable-text"></span>
+          </.notice>
+          <.notice
+            id="offline-alert"
+            kind="info"
+            data-generic={MysticWeb.Offline.ended_message(nil)}
+            hidden
+          >
+            <span id="offline-alert-text"></span>
+          </.notice>
+
+          <section
+            id="offline-sync"
+            class="card offline-sync"
+            aria-labelledby="offline-sync-title"
+          >
+            <div class="min-w-0 flex-1 space-y-1">
+              <h2 id="offline-sync-title" class="text-2xl">{gettext("Synchronization")}</h2>
+              <p id="offline-sync-status" class="text-sm" role="status" aria-live="polite"></p>
+              <p id="offline-sync-reason" class="text-sm text-muted"></p>
+            </div>
+            <button
+              type="button"
+              id="offline-sync-now"
+              class="btn btn-secondary"
+              aria-describedby="offline-sync-reason"
+              disabled
+            >
+              <.icon name="hero-arrow-path" />
+              <span data-label>{gettext("Synchronize now")}</span>
+            </button>
+          </section>
+
+          <section
+            id="offline-results"
+            class="space-y-3"
+            aria-labelledby="offline-results-title"
+            hidden
+          >
+            <h2 id="offline-results-title" class="text-2xl">{gettext("Last synchronization")}</h2>
+            <ul id="offline-results-list" class="offline-results"></ul>
+          </section>
+
+          <section
+            id="offline-list-section"
+            class="space-y-3"
+            aria-labelledby="offline-list-title"
+          >
+            <h2 id="offline-list-title" class="text-2xl">{gettext("Lessons on this device")}</h2>
+            <p id="offline-empty" class="text-muted" hidden></p>
+            <ul id="offline-list" class="offline-list"></ul>
+          </section>
+
+          <article
+            id="offline-lesson"
+            class="offline-lesson"
+            aria-labelledby="offline-lesson-title"
+            hidden
+          >
+          </article>
+
+          <nav class="offline-links" aria-label={gettext("MysticLore")}>
+            <a href={~p"/dashboard"} class="btn btn-ghost" id="offline-back">
+              <.icon name="hero-home" /> {gettext("Back to MysticLore")}
+            </a>
+            <span id="offline-back-note" class="text-sm text-muted" hidden></span>
+          </nav>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

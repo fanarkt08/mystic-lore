@@ -1,0 +1,2356 @@
+{
+ "database": "ml_accounts_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "citext 1.6",
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261123134833,
+  20261123154040,
+  20261123200000,
+  20261123200001,
+  20261124090000,
+  20261124120000,
+  20261125090000
+ ],
+ "tables": [
+  {
+   "table": "audit_entries",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('audit_entries_id_seq'::regclass)"
+    },
+    {
+     "name": "service",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "actor_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "action",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "target_type",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "target_id",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "metadata",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "audit_entries_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "audit_entries_action_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX audit_entries_action_inserted_at_index ON public.audit_entries USING btree (action, inserted_at)"
+    },
+    {
+     "name": "audit_entries_actor_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX audit_entries_actor_id_inserted_at_index ON public.audit_entries USING btree (actor_id, inserted_at)"
+    },
+    {
+     "name": "audit_entries_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX audit_entries_inserted_at_index ON public.audit_entries USING btree (inserted_at)"
+    },
+    {
+     "name": "audit_entries_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "audit_entries_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX audit_entries_pkey ON public.audit_entries USING btree (id)"
+    }
+   ],
+   "triggers": [
+    {
+     "name": "audit_entries_no_change",
+     "definition": "CREATE TRIGGER audit_entries_no_change BEFORE DELETE OR UPDATE ON public.audit_entries FOR EACH ROW EXECUTE FUNCTION audit_entries_append_only()"
+    }
+   ]
+  },
+  {
+   "table": "confirmation_tokens",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "token_hash",
+     "type": "bytea",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "confirmation_tokens_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "confirmation_tokens_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "confirmation_tokens_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "confirmation_tokens_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX confirmation_tokens_pkey ON public.confirmation_tokens USING btree (id)"
+    },
+    {
+     "name": "confirmation_tokens_token_hash_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX confirmation_tokens_token_hash_index ON public.confirmation_tokens USING btree (token_hash)"
+    },
+    {
+     "name": "confirmation_tokens_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX confirmation_tokens_user_id_index ON public.confirmation_tokens USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "data_exports",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'pending'::character varying"
+    },
+    {
+     "name": "data",
+     "type": "jsonb",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "failed_services",
+     "type": "character varying(255)[]",
+     "not_null": true,
+     "default": "ARRAY[]::character varying[]"
+    },
+    {
+     "name": "completed_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "data_exports_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'ready'::character varying, 'failed'::character varying])::text[])))"
+    },
+    {
+     "name": "data_exports_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "data_exports_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "data_exports_expires_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX data_exports_expires_at_index ON public.data_exports USING btree (expires_at)"
+    },
+    {
+     "name": "data_exports_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "data_exports_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX data_exports_pkey ON public.data_exports USING btree (id)"
+    },
+    {
+     "name": "data_exports_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX data_exports_user_id_inserted_at_index ON public.data_exports USING btree (user_id, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "deletion_steps",
+   "columns": [
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "service",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "deletion_steps_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "deletion_steps_pkey",
+     "type": "p",
+     "columns": [
+      "user_id",
+      "service"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (user_id, service)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "deletion_steps_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "deletion_steps_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX deletion_steps_pkey ON public.deletion_steps USING btree (user_id, service)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "incident_updates",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "incident_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "author_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "severity",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "incident_updates_incident_id_fkey",
+     "type": "f",
+     "columns": [
+      "incident_id"
+     ],
+     "ref_table": "incidents",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (incident_id) REFERENCES incidents(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "incident_updates_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "incident_updates_incident_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX incident_updates_incident_id_inserted_at_index ON public.incident_updates USING btree (incident_id, inserted_at)"
+    },
+    {
+     "name": "incident_updates_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "incident_updates_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX incident_updates_pkey ON public.incident_updates USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "incidents",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "severity",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'open'::character varying"
+    },
+    {
+     "name": "summary",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "created_by",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "resolved_by",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "resolved_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "incidents_resolution",
+     "type": "c",
+     "columns": [
+      "status",
+      "summary",
+      "resolved_at",
+      "resolved_by"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((((status)::text <> 'resolved'::text) OR ((summary IS NOT NULL) AND (resolved_at IS NOT NULL) AND (resolved_by IS NOT NULL))))"
+    },
+    {
+     "name": "incidents_severity",
+     "type": "c",
+     "columns": [
+      "severity"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((severity)::text = ANY ((ARRAY['low'::character varying, 'medium'::character varying, 'high'::character varying, 'critical'::character varying])::text[])))"
+    },
+    {
+     "name": "incidents_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'investigating'::character varying, 'resolved'::character varying])::text[])))"
+    },
+    {
+     "name": "incidents_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "incidents_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "incidents_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX incidents_pkey ON public.incidents USING btree (id)"
+    },
+    {
+     "name": "incidents_status_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX incidents_status_inserted_at_index ON public.incidents USING btree (status, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "login_challenges",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "token_hash",
+     "type": "bytea",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "attempts",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "login_challenges_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "login_challenges_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "login_challenges_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "login_challenges_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX login_challenges_pkey ON public.login_challenges USING btree (id)"
+    },
+    {
+     "name": "login_challenges_token_hash_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX login_challenges_token_hash_index ON public.login_challenges USING btree (token_hash)"
+    },
+    {
+     "name": "login_challenges_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX login_challenges_user_id_index ON public.login_challenges USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "login_failures",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('login_failures_id_seq'::regclass)"
+    },
+    {
+     "name": "email",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "login_failures_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "login_failures_email_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX login_failures_email_inserted_at_index ON public.login_failures USING btree (email, inserted_at)"
+    },
+    {
+     "name": "login_failures_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "login_failures_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX login_failures_pkey ON public.login_failures USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_jobs",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('oban_jobs_id_seq'::regclass)"
+    },
+    {
+     "name": "state",
+     "type": "oban_job_state",
+     "not_null": true,
+     "default": "'available'::oban_job_state"
+    },
+    {
+     "name": "queue",
+     "type": "text",
+     "not_null": true,
+     "default": "'default'::text"
+    },
+    {
+     "name": "worker",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "args",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "errors",
+     "type": "jsonb[]",
+     "not_null": true,
+     "default": "ARRAY[]::jsonb[]"
+    },
+    {
+     "name": "attempt",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "max_attempts",
+     "type": "integer",
+     "not_null": true,
+     "default": "20"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "scheduled_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": "timezone('UTC'::text, now())"
+    },
+    {
+     "name": "attempted_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "completed_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "attempted_by",
+     "type": "text[]",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "discarded_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "priority",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "tags",
+     "type": "text[]",
+     "not_null": false,
+     "default": "ARRAY[]::text[]"
+    },
+    {
+     "name": "meta",
+     "type": "jsonb",
+     "not_null": false,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "cancelled_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "attempt_range",
+     "type": "c",
+     "columns": [
+      "attempt",
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((attempt >= 0) AND (attempt <= max_attempts)))"
+    },
+    {
+     "name": "non_negative_priority",
+     "type": "c",
+     "columns": [
+      "priority"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((priority >= 0)) NOT VALID"
+    },
+    {
+     "name": "positive_max_attempts",
+     "type": "c",
+     "columns": [
+      "max_attempts"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((max_attempts > 0))"
+    },
+    {
+     "name": "queue_length",
+     "type": "c",
+     "columns": [
+      "queue"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128)))"
+    },
+    {
+     "name": "worker_length",
+     "type": "c",
+     "columns": [
+      "worker"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_jobs_args_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_args_index ON public.oban_jobs USING gin (args)"
+    },
+    {
+     "name": "oban_jobs_meta_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta)"
+    },
+    {
+     "name": "oban_jobs_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_jobs_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_jobs_pkey ON public.oban_jobs USING btree (id)"
+    },
+    {
+     "name": "oban_jobs_state_cancelled_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_cancelled_at_index ON public.oban_jobs USING btree (state, cancelled_at)"
+    },
+    {
+     "name": "oban_jobs_state_discarded_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_discarded_at_index ON public.oban_jobs USING btree (state, discarded_at)"
+    },
+    {
+     "name": "oban_jobs_state_queue_priority_scheduled_at_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban_jobs USING btree (state, queue, priority, scheduled_at, id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "oban_peers",
+   "columns": [
+    {
+     "name": "name",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "node",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "started_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "oban_peers_pkey",
+     "type": "p",
+     "columns": [
+      "name"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (name)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "oban_peers_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "oban_peers_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX oban_peers_pkey ON public.oban_peers USING btree (name)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "recovery_codes",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "code_hash",
+     "type": "bytea",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "recovery_codes_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "recovery_codes_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "recovery_codes_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "recovery_codes_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX recovery_codes_pkey ON public.recovery_codes USING btree (id)"
+    },
+    {
+     "name": "recovery_codes_user_id_code_hash_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX recovery_codes_user_id_code_hash_index ON public.recovery_codes USING btree (user_id, code_hash)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "sanction_appeals",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "sanction_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'open'::character varying"
+    },
+    {
+     "name": "decided_by",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "decision_reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "decided_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "sanction_appeals_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'accepted'::character varying, 'rejected'::character varying])::text[])))"
+    },
+    {
+     "name": "sanction_appeals_sanction_id_fkey",
+     "type": "f",
+     "columns": [
+      "sanction_id"
+     ],
+     "ref_table": "sanctions",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (sanction_id) REFERENCES sanctions(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "sanction_appeals_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "sanction_appeals_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "sanction_appeals_one_open_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": "((status)::text = 'open'::text)",
+     "definition": "CREATE UNIQUE INDEX sanction_appeals_one_open_index ON public.sanction_appeals USING btree (sanction_id) WHERE ((status)::text = 'open'::text)"
+    },
+    {
+     "name": "sanction_appeals_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "sanction_appeals_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX sanction_appeals_pkey ON public.sanction_appeals USING btree (id)"
+    },
+    {
+     "name": "sanction_appeals_status_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX sanction_appeals_status_inserted_at_index ON public.sanction_appeals USING btree (status, inserted_at)"
+    },
+    {
+     "name": "sanction_appeals_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX sanction_appeals_user_id_index ON public.sanction_appeals USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "sanctions",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "kind",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reason",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "issued_by",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "ends_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "ref",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "lifted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "lifted_by",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "lift_reason",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "sanctions_kind",
+     "type": "c",
+     "columns": [
+      "kind",
+      "ends_at"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((((kind)::text = 'warning'::text) AND (ends_at IS NULL)) OR (((kind)::text = 'restriction'::text) AND (ends_at IS NOT NULL))))"
+    },
+    {
+     "name": "sanctions_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "sanctions_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "sanctions_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "sanctions_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX sanctions_pkey ON public.sanctions USING btree (id)"
+    },
+    {
+     "name": "sanctions_ref_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": "(ref IS NOT NULL)",
+     "definition": "CREATE UNIQUE INDEX sanctions_ref_index ON public.sanctions USING btree (ref) WHERE (ref IS NOT NULL)"
+    },
+    {
+     "name": "sanctions_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX sanctions_user_id_inserted_at_index ON public.sanctions USING btree (user_id, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "sessions",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "token_hash",
+     "type": "bytea",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "last_used_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_agent",
+     "type": "character varying(200)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "ip",
+     "type": "character varying(45)",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "sessions_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "sessions_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "sessions_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "sessions_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX sessions_pkey ON public.sessions USING btree (id)"
+    },
+    {
+     "name": "sessions_token_hash_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX sessions_token_hash_index ON public.sessions USING btree (token_hash)"
+    },
+    {
+     "name": "sessions_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "support_replies",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "request_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "author_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "email_status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "support_replies_request_id_fkey",
+     "type": "f",
+     "columns": [
+      "request_id"
+     ],
+     "ref_table": "support_requests",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (request_id) REFERENCES support_requests(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "support_replies_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "support_replies_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "support_replies_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX support_replies_pkey ON public.support_replies USING btree (id)"
+    },
+    {
+     "name": "support_replies_request_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX support_replies_request_id_index ON public.support_replies USING btree (request_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "support_requests",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "reference",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "email",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "topic",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "message",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "locale",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'en'::character varying"
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'open'::character varying"
+    },
+    {
+     "name": "internal_note",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "answered_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "closed_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "support_requests_requester",
+     "type": "c",
+     "columns": [
+      "user_id",
+      "email"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((user_id IS NULL) <> (email IS NULL)))"
+    },
+    {
+     "name": "support_requests_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'answered'::character varying, 'closed'::character varying])::text[])))"
+    },
+    {
+     "name": "support_requests_topic",
+     "type": "c",
+     "columns": [
+      "topic"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((topic)::text = ANY ((ARRAY['account'::character varying, 'billing'::character varying, 'privacy'::character varying, 'bug'::character varying, 'other'::character varying])::text[])))"
+    },
+    {
+     "name": "support_requests_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "support_requests_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "support_requests_closed_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX support_requests_closed_at_index ON public.support_requests USING btree (closed_at)"
+    },
+    {
+     "name": "support_requests_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "support_requests_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX support_requests_pkey ON public.support_requests USING btree (id)"
+    },
+    {
+     "name": "support_requests_reference_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX support_requests_reference_index ON public.support_requests USING btree (reference)"
+    },
+    {
+     "name": "support_requests_status_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX support_requests_status_inserted_at_index ON public.support_requests USING btree (status, inserted_at)"
+    },
+    {
+     "name": "support_requests_user_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX support_requests_user_id_index ON public.support_requests USING btree (user_id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "throttle_events",
+   "columns": [
+    {
+     "name": "id",
+     "type": "bigint",
+     "not_null": true,
+     "default": "nextval('throttle_events_id_seq'::regclass)"
+    },
+    {
+     "name": "key",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "throttle_events_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "throttle_events_key_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX throttle_events_key_inserted_at_index ON public.throttle_events USING btree (key, inserted_at)"
+    },
+    {
+     "name": "throttle_events_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "throttle_events_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX throttle_events_pkey ON public.throttle_events USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "user_tokens",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "context",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "token_hash",
+     "type": "bytea",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "sent_to",
+     "type": "citext",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "context_must_be_valid",
+     "type": "c",
+     "columns": [
+      "context"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((context)::text = ANY ((ARRAY['reset_password'::character varying, 'change_email'::character varying])::text[])))"
+    },
+    {
+     "name": "user_tokens_user_id_fkey",
+     "type": "f",
+     "columns": [
+      "user_id"
+     ],
+     "ref_table": "users",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "user_tokens_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "user_tokens_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "user_tokens_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX user_tokens_pkey ON public.user_tokens USING btree (id)"
+    },
+    {
+     "name": "user_tokens_token_hash_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX user_tokens_token_hash_index ON public.user_tokens USING btree (token_hash)"
+    },
+    {
+     "name": "user_tokens_user_id_context_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX user_tokens_user_id_context_index ON public.user_tokens USING btree (user_id, context)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "users",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "email",
+     "type": "citext",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "username",
+     "type": "citext",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "display_name",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "bio",
+     "type": "text",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "hashed_password",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "role",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'user'::character varying"
+    },
+    {
+     "name": "confirmed_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "totp_secret",
+     "type": "bytea",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "totp_pending_secret",
+     "type": "bytea",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "totp_last_step",
+     "type": "bigint",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "totp_enabled_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "deletion_scheduled_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "deleted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "restricted_until",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "pronouns",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "interests",
+     "type": "character varying(255)[]",
+     "not_null": true,
+     "default": "ARRAY[]::character varying[]"
+    },
+    {
+     "name": "cover",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "profile_visibility",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'members'::character varying"
+    },
+    {
+     "name": "avatar_crest",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "avatar_image",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "preferences",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "onboarding_status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'pending'::character varying"
+    },
+    {
+     "name": "onboarding_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "role_must_be_valid",
+     "type": "c",
+     "columns": [
+      "role"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((role)::text = ANY ((ARRAY['user'::character varying, 'moderator'::character varying, 'admin'::character varying])::text[])))"
+    },
+    {
+     "name": "users_onboarding_status",
+     "type": "c",
+     "columns": [
+      "onboarding_status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((onboarding_status)::text = ANY ((ARRAY['pending'::character varying, 'completed'::character varying, 'skipped'::character varying])::text[])))"
+    },
+    {
+     "name": "users_one_avatar",
+     "type": "c",
+     "columns": [
+      "avatar_crest",
+      "avatar_image"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((avatar_crest IS NULL) OR (avatar_image IS NULL)))"
+    },
+    {
+     "name": "users_profile_visibility",
+     "type": "c",
+     "columns": [
+      "profile_visibility"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((profile_visibility)::text = ANY ((ARRAY['public'::character varying, 'members'::character varying, 'friends'::character varying, 'private'::character varying])::text[])))"
+    },
+    {
+     "name": "users_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "users_avatar_image_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": "(avatar_image IS NOT NULL)",
+     "definition": "CREATE UNIQUE INDEX users_avatar_image_index ON public.users USING btree (avatar_image) WHERE (avatar_image IS NOT NULL)"
+    },
+    {
+     "name": "users_deletion_due_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": "((deletion_scheduled_at IS NOT NULL) AND (deleted_at IS NULL))",
+     "definition": "CREATE INDEX users_deletion_due_index ON public.users USING btree (deletion_scheduled_at) WHERE ((deletion_scheduled_at IS NOT NULL) AND (deleted_at IS NULL))"
+    },
+    {
+     "name": "users_email_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX users_email_index ON public.users USING btree (email)"
+    },
+    {
+     "name": "users_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "users_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+    },
+    {
+     "name": "users_username_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX users_username_index ON public.users USING btree (username)"
+    }
+   ],
+   "triggers": null
+  }
+ ]
+}

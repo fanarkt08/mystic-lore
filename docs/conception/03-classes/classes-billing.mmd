@@ -1,0 +1,153 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (classes) depuis src/billing/lib et la base ml_billing_dev — ne pas modifier à la main.
+%% @titre Diagramme de classes — service billing : schémas Ecto et modules de contexte
+%% @legende Elixir n'a pas de classes : chaque boîte « schema » est un schéma Ecto (une structure liée à une table) ; chaque boîte « module » est un module de fonctions (contexte métier), sans état ni instance.
+%% @legende Attributs : champs du schéma Ecto avec leur type Ecto (binary_id, Ecto.UUID, utc_datetime…) et leur valeur par défaut ; «PK» clé primaire, «FK» champ de belongs_to, «virtual» non enregistré en base, «redact» masqué dans les journaux, «embeds» structure incluse (embeds_one).
+%% @legende Associations : une par clé étrangère réelle de la base ; multiplicités tirées de NOT NULL (1 ou 0..1) et des index uniques (0..1 ou 0..*) ; libellé = association Ecto qui la porte, ou « champ simple » quand le schéma n'a qu'un champ *_id. Les identifiants d'une autre base (user_id…) ne sont pas des associations : voir le MCD et le MPD.
+%% @legende Modules : fonctions publiques clés seulement (sélection), paramètres tels qu'écrits dans la première clause ; flèche pointillée = le module manipule ce schéma. Généré par e2e/tools/conception.mjs classes (noms et arités vérifiés dans le source).
+%% @ref CheckoutSession src/billing/lib/billing/checkout_session.ex:1 | defmodule MlBilling.CheckoutSession do
+%% @ref CreditAccount src/billing/lib/billing/credit_account.ex:1 | defmodule MlBilling.CreditAccount do
+%% @ref CreditEntry src/billing/lib/billing/credit_entry.ex:1 | defmodule MlBilling.CreditEntry do
+%% @ref Invoice src/billing/lib/billing/invoice.ex:1 | defmodule MlBilling.Invoice do
+%% @ref Subscription src/billing/lib/billing/subscription.ex:1 | defmodule MlBilling.Subscription do
+%% @ref WebhookEvent src/billing/lib/billing/webhook_event.ex:1 | defmodule MlBilling.WebhookEvent do
+%% @ref MlBilling src/billing/lib/billing.ex:1 | defmodule MlBilling do
+%% @ref Webhooks src/billing/lib/billing/webhooks.ex:1 | defmodule MlBilling.Webhooks do
+%% @ref Credits src/billing/lib/billing/credits.ex:1 | defmodule MlBilling.Credits do
+%% @ref Signature src/billing/lib/billing/signature.ex:1 | defmodule MlBilling.Signature do
+%% @ref Notices src/billing/lib/billing/notices.ex:1 | defmodule MlBilling.Notices do
+%% @ref PeriodEndWorker src/billing/lib/billing/period_end_worker.ex:1 | defmodule MlBilling.PeriodEndWorker do
+classDiagram
+  direction LR
+  note "Elixir n’a pas de classes : ce diagramme représente les structures (schémas Ecto) et les modules (fonctions)."
+  namespace Schémas_Ecto {
+    class CheckoutSession["MlBilling.CheckoutSession"] {
+      <<schema checkout_sessions>>
+      +id : binary_id «PK»
+      +user_id : Ecto.UUID
+      +plan : string
+      +status : string = "open"
+      +provider : string
+      +provider_session_id : string
+      +expires_at : utc_datetime
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class CreditAccount["MlBilling.CreditAccount"] {
+      <<schema credit_accounts>>
+      +user_id : binary_id «PK»
+      +period : string
+      +plan : string
+      +allocation : integer = 0
+      +balance : integer = 0
+      +reserved : integer = 0
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class CreditEntry["MlBilling.CreditEntry"] {
+      <<schema credit_entries>>
+      +id : binary_id «PK»
+      +seq : integer
+      +user_id : Ecto.UUID
+      +kind : string
+      +amount : integer
+      +delta : integer
+      +balance_after : integer
+      +ref : string
+      +reason : string
+      +period : string
+      +inserted_at : utc_datetime_usec
+    }
+    class Invoice["MlBilling.Invoice"] {
+      <<schema invoices>>
+      +id : binary_id «PK»
+      +user_id : Ecto.UUID
+      +provider : string
+      +provider_invoice_id : string
+      +provider_subscription_id : string
+      +amount_cents : integer
+      +currency : string
+      +status : string
+      +period_start : utc_datetime
+      +period_end : utc_datetime
+      +hosted_url : string
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class Subscription["MlBilling.Subscription"] {
+      <<schema subscriptions>>
+      +id : binary_id «PK»
+      +user_id : Ecto.UUID
+      +plan : string = "free"
+      +status : string = "none"
+      +provider : string
+      +provider_customer_id : string
+      +provider_subscription_id : string
+      +current_period_start : utc_datetime
+      +current_period_end : utc_datetime
+      +cancel_at_period_end : boolean = false
+      +past_due_since : utc_datetime
+      +last_event_at : utc_datetime
+      +inserted_at : utc_datetime
+      +updated_at : utc_datetime
+    }
+    class WebhookEvent["MlBilling.WebhookEvent"] {
+      <<schema webhook_events>>
+      +id : binary_id «PK»
+      +provider : string
+      +provider_event_id : string
+      +type : string
+      +event_created_at : utc_datetime
+      +user_id : Ecto.UUID
+      +status : string
+      +error : string
+      +payload : map
+      +inserted_at : utc_datetime
+    }
+  }
+  namespace Modules_de_contexte {
+    class MlBilling["MlBilling"] {
+      <<module>>
+      +entitlements(user_id, now)
+      +create_checkout(user_id, params)
+      +simulate_payment(user_id, id, params)
+      +cancel(user_id)
+      +resume(user_id)
+      +broadcast(sub)
+    }
+    class Webhooks["MlBilling.Webhooks"] {
+      <<module>>
+      +handle(provider, raw_body, signature_header)
+    }
+    class Credits["MlBilling.Credits"] {
+      <<module>>
+      +reserve(user_id, amount, ref, reason, now)
+      +consume(user_id, ref, now)
+      +release(user_id, ref, now)
+      +adjust(user_id, amount, ref, audit, now)
+      +sync_plan(user_id, now)
+      +overview(user_id, page, now)
+    }
+    class Signature["MlBilling.Signature"] {
+      <<module>>
+      +header(payload, secret, timestamp)
+      +verify(payload, header, secret, now)
+    }
+    class Notices["MlBilling.Notices"] {
+      <<module>>
+      +transition!(old, new)
+    }
+    class PeriodEndWorker["MlBilling.PeriodEndWorker"] {
+      <<Oban.Worker file default>>
+      +perform(job)
+    }
+  }
+  MlBilling ..> Subscription
+  MlBilling ..> CheckoutSession
+  MlBilling ..> Invoice
+  Webhooks ..> WebhookEvent
+  Webhooks ..> Subscription
+  Webhooks ..> Invoice
+  Webhooks ..> CheckoutSession
+  Credits ..> CreditAccount
+  Credits ..> CreditEntry
+  PeriodEndWorker ..> Subscription

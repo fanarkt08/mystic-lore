@@ -1,0 +1,1083 @@
+{
+ "database": "ml_multiplayer_dev",
+ "server_version": "14.17 (Homebrew)",
+ "extensions": [
+  "plpgsql 1.0"
+ ],
+ "migrations": [
+  20261123170000
+ ],
+ "tables": [
+  {
+   "table": "lobbies",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "host_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "visibility",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "requires_approval",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "max_players",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "starts_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'waiting'::character varying"
+    },
+    {
+     "name": "current_match_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "lobbies_capacity",
+     "type": "c",
+     "columns": [
+      "max_players"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((max_players >= 2) AND (max_players <= 4)))"
+    },
+    {
+     "name": "lobbies_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['waiting'::character varying, 'playing'::character varying, 'closed'::character varying])::text[])))"
+    },
+    {
+     "name": "lobbies_title",
+     "type": "c",
+     "columns": [
+      "title"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length((title)::text) >= 3) AND (char_length((title)::text) <= 60)))"
+    },
+    {
+     "name": "lobbies_visibility",
+     "type": "c",
+     "columns": [
+      "visibility"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((visibility)::text = ANY ((ARRAY['open'::character varying, 'private'::character varying])::text[])))"
+    },
+    {
+     "name": "lobbies_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lobbies_host_id_status_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobbies_host_id_status_index ON public.lobbies USING btree (host_id, status)"
+    },
+    {
+     "name": "lobbies_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lobbies_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lobbies_pkey ON public.lobbies USING btree (id)"
+    },
+    {
+     "name": "lobbies_visibility_status_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobbies_visibility_status_inserted_at_index ON public.lobbies USING btree (visibility, status, inserted_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "lobby_invites",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lobby_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inviter_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "invitee_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'pending'::character varying"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "lobby_invites_not_self",
+     "type": "c",
+     "columns": [
+      "inviter_id",
+      "invitee_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((inviter_id <> invitee_id))"
+    },
+    {
+     "name": "lobby_invites_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'declined'::character varying, 'revoked'::character varying])::text[])))"
+    },
+    {
+     "name": "lobby_invites_lobby_id_fkey",
+     "type": "f",
+     "columns": [
+      "lobby_id"
+     ],
+     "ref_table": "lobbies",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lobby_id) REFERENCES lobbies(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lobby_invites_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lobby_invites_invitee_id_status_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobby_invites_invitee_id_status_index ON public.lobby_invites USING btree (invitee_id, status)"
+    },
+    {
+     "name": "lobby_invites_lobby_id_invitee_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lobby_invites_lobby_id_invitee_id_index ON public.lobby_invites USING btree (lobby_id, invitee_id)"
+    },
+    {
+     "name": "lobby_invites_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lobby_invites_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lobby_invites_pkey ON public.lobby_invites USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "lobby_links",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lobby_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "created_by",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "token_hash",
+     "type": "bytea",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "expires_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "max_uses",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "uses",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "revoked_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "lobby_links_uses",
+     "type": "c",
+     "columns": [
+      "max_uses",
+      "uses"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((((max_uses >= 1) AND (max_uses <= 20)) AND ((uses >= 0) AND (uses <= max_uses))))"
+    },
+    {
+     "name": "lobby_links_lobby_id_fkey",
+     "type": "f",
+     "columns": [
+      "lobby_id"
+     ],
+     "ref_table": "lobbies",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lobby_id) REFERENCES lobbies(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lobby_links_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lobby_links_lobby_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobby_links_lobby_id_index ON public.lobby_links USING btree (lobby_id)"
+    },
+    {
+     "name": "lobby_links_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lobby_links_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lobby_links_pkey ON public.lobby_links USING btree (id)"
+    },
+    {
+     "name": "lobby_links_token_hash_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lobby_links_token_hash_index ON public.lobby_links USING btree (token_hash)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "lobby_members",
+   "columns": [
+    {
+     "name": "lobby_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "ready",
+     "type": "boolean",
+     "not_null": true,
+     "default": "false"
+    },
+    {
+     "name": "connection",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'online'::character varying"
+    },
+    {
+     "name": "last_seen_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "joined_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "lobby_members_connection",
+     "type": "c",
+     "columns": [
+      "connection"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((connection)::text = ANY ((ARRAY['online'::character varying, 'disconnected'::character varying, 'absent'::character varying])::text[])))"
+    },
+    {
+     "name": "lobby_members_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'active'::character varying, 'left'::character varying, 'kicked'::character varying, 'declined'::character varying])::text[])))"
+    },
+    {
+     "name": "lobby_members_lobby_id_fkey",
+     "type": "f",
+     "columns": [
+      "lobby_id"
+     ],
+     "ref_table": "lobbies",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lobby_id) REFERENCES lobbies(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lobby_members_pkey",
+     "type": "p",
+     "columns": [
+      "lobby_id",
+      "user_id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (lobby_id, user_id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lobby_members_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lobby_members_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lobby_members_pkey ON public.lobby_members USING btree (lobby_id, user_id)"
+    },
+    {
+     "name": "lobby_members_status_connection_last_seen_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobby_members_status_connection_last_seen_at_index ON public.lobby_members USING btree (status, connection, last_seen_at)"
+    },
+    {
+     "name": "lobby_members_user_id_status_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobby_members_user_id_status_index ON public.lobby_members USING btree (user_id, status)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "lobby_messages",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lobby_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "body",
+     "type": "text",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "lobby_messages_body",
+     "type": "c",
+     "columns": [
+      "body"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((char_length(body) >= 1) AND (char_length(body) <= 500)))"
+    },
+    {
+     "name": "lobby_messages_lobby_id_fkey",
+     "type": "f",
+     "columns": [
+      "lobby_id"
+     ],
+     "ref_table": "lobbies",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lobby_id) REFERENCES lobbies(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "lobby_messages_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "lobby_messages_lobby_id_inserted_at_id_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobby_messages_lobby_id_inserted_at_id_index ON public.lobby_messages USING btree (lobby_id, inserted_at, id)"
+    },
+    {
+     "name": "lobby_messages_lobby_id_user_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX lobby_messages_lobby_id_user_id_inserted_at_index ON public.lobby_messages USING btree (lobby_id, user_id, inserted_at)"
+    },
+    {
+     "name": "lobby_messages_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "lobby_messages_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX lobby_messages_pkey ON public.lobby_messages USING btree (id)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "match_events",
+   "columns": [
+    {
+     "name": "match_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "seq",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "type",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "payload",
+     "type": "jsonb",
+     "not_null": true,
+     "default": "'{}'::jsonb"
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "match_events_seq",
+     "type": "c",
+     "columns": [
+      "seq"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK ((seq >= 1))"
+    },
+    {
+     "name": "match_events_match_id_fkey",
+     "type": "f",
+     "columns": [
+      "match_id"
+     ],
+     "ref_table": "matches",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "match_events_pkey",
+     "type": "p",
+     "columns": [
+      "match_id",
+      "seq"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (match_id, seq)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "match_events_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "match_events_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX match_events_pkey ON public.match_events USING btree (match_id, seq)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "match_rewards",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "match_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "amount",
+     "type": "integer",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'pending'::character varying"
+    },
+    {
+     "name": "attempts",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "next_attempt_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "last_error",
+     "type": "character varying(255)",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "awarded_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "match_rewards_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'awarded'::character varying, 'failed'::character varying])::text[])))"
+    },
+    {
+     "name": "match_rewards_match_id_fkey",
+     "type": "f",
+     "columns": [
+      "match_id"
+     ],
+     "ref_table": "matches",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "match_rewards_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "match_rewards_match_id_user_id_index",
+     "unique": true,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX match_rewards_match_id_user_id_index ON public.match_rewards USING btree (match_id, user_id)"
+    },
+    {
+     "name": "match_rewards_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "match_rewards_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX match_rewards_pkey ON public.match_rewards USING btree (id)"
+    },
+    {
+     "name": "match_rewards_status_next_attempt_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX match_rewards_status_next_attempt_at_index ON public.match_rewards USING btree (status, next_attempt_at)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "matches",
+   "columns": [
+    {
+     "name": "id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "lobby_id",
+     "type": "uuid",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "character varying(255)",
+     "not_null": true,
+     "default": "'active'::character varying"
+    },
+    {
+     "name": "last_seq",
+     "type": "integer",
+     "not_null": true,
+     "default": "0"
+    },
+    {
+     "name": "finished_at",
+     "type": "timestamp without time zone",
+     "not_null": false,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "timestamp without time zone",
+     "not_null": true,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "matches_status",
+     "type": "c",
+     "columns": [
+      "status"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'won'::character varying, 'lost'::character varying, 'aborted'::character varying])::text[])))"
+    },
+    {
+     "name": "matches_lobby_id_fkey",
+     "type": "f",
+     "columns": [
+      "lobby_id"
+     ],
+     "ref_table": "lobbies",
+     "ref_columns": [
+      "id"
+     ],
+     "on_delete": "c",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "FOREIGN KEY (lobby_id) REFERENCES lobbies(id) ON DELETE CASCADE"
+    },
+    {
+     "name": "matches_pkey",
+     "type": "p",
+     "columns": [
+      "id"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (id)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "matches_lobby_id_inserted_at_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX matches_lobby_id_inserted_at_index ON public.matches USING btree (lobby_id, inserted_at)"
+    },
+    {
+     "name": "matches_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "matches_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX matches_pkey ON public.matches USING btree (id)"
+    },
+    {
+     "name": "matches_status_index",
+     "unique": false,
+     "primary": false,
+     "constraint": null,
+     "predicate": null,
+     "definition": "CREATE INDEX matches_status_index ON public.matches USING btree (status)"
+    }
+   ],
+   "triggers": null
+  },
+  {
+   "table": "schema_migrations",
+   "columns": [
+    {
+     "name": "version",
+     "type": "bigint",
+     "not_null": true,
+     "default": null
+    },
+    {
+     "name": "inserted_at",
+     "type": "timestamp(0) without time zone",
+     "not_null": false,
+     "default": null
+    }
+   ],
+   "constraints": [
+    {
+     "name": "schema_migrations_pkey",
+     "type": "p",
+     "columns": [
+      "version"
+     ],
+     "ref_table": null,
+     "ref_columns": null,
+     "on_delete": " ",
+     "deferrable": false,
+     "deferred": false,
+     "definition": "PRIMARY KEY (version)"
+    }
+   ],
+   "indexes": [
+    {
+     "name": "schema_migrations_pkey",
+     "unique": true,
+     "primary": true,
+     "constraint": "schema_migrations_pkey",
+     "predicate": null,
+     "definition": "CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)"
+    }
+   ],
+   "triggers": null
+  }
+ ]
+}

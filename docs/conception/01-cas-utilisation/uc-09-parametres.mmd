@@ -1,0 +1,56 @@
+%% Cas d'utilisation — écran 11 « paramètres » : profil, compte, sécurité, préférences, accessibilité, apprentissage, notifications,
+%% confidentialité, données (export, suppression), leçons hors ligne.
+%% @titre Cas d’utilisation — Paramètres du compte (écran 11)
+%% @legende Chaque réglage est validé et enregistré par le service qui le détient (accounts, social pour la confidentialité, notifications pour les canaux et heures calmes, billing pour vérifier le thème VIP) ; un succès n’est annoncé qu’après sa réponse.
+%% @legende Suppression du compte : programmée à J+30 et annulable pendant ce délai ; ensuite exécutée service par service, puis le compte est anonymisé (voir le diagramme du cycle de vie des données).
+%% @ref Profil src/web/lib/web_web/live/settings_live.ex:250-306 | def handle_event("save_profile"
+%% @ref Préférences src/web/lib/web_web/live/settings_live.ex:312-344 | def handle_event("save_appearance"
+%% @ref Thème-VIP docs/contracts/accounts-profile.md:68-70 | **Thème VIP** : passer à `grove`, `ember` ou `parchment` exige la formule VIP effective
+%% @ref Sécurité src/web/lib/web_web/live/settings_live.ex:424-593 | def handle_event("setup_two_factor"
+%% @ref Confidentialité src/web/lib/web_web/live/settings_live.ex:377-406 | def handle_event("save_visibility"
+%% @ref Données src/web/lib/web_web/live/settings_live.ex:604-681 | def handle_event("delete_account"
+%% @ref Notifications src/web/lib/web_web/live/settings_live.ex:685-709 | def handle_event("save_quiet_hours"
+%% @ref Hors-ligne docs/contracts/offline.md:135-136 | **« Clear offline data »** (paramètres)
+usecase-beta
+  direction LR
+  actor Membre
+  actor VIP(Membre VIP)
+  actor Premium(Membre Premium)
+  actor Courriel(Service d’e-mail) <<système externe>>
+  systemBoundary sys(MysticLore — paramètres)
+    PROF(Modifier son profil : avatar, pronoms, centres d’intérêt)
+    VISI(Choisir la visibilité du profil et voir l’aperçu)
+    PREF(Régler langue, fuseau, thème et accessibilité)
+    THEME(Choisir un thème VIP)
+    OBJ(Fixer son objectif quotidien d’XP)
+    MDP(Changer son mot de passe ou son e-mail)
+    LIEN(Recevoir le lien de confirmation du nouvel e-mail)
+    DEUXF(Activer ou désactiver la double authentification)
+    SESS(Révoquer ses sessions actives)
+    NOTIF(Régler canaux de notification et heures calmes)
+    PRIV(Régler statut en ligne, accusés de lecture et contacts)
+    EXPORT(Exporter ses données)
+    SUPPR(Supprimer son compte à J+30)
+    ANNUL(Annuler la suppression pendant le délai)
+    OFF(Effacer ses leçons hors ligne)
+  end
+  Membre -- PROF
+  Membre -- VISI
+  Membre -- PREF
+  Membre -- OBJ
+  Membre -- MDP
+  Membre -- DEUXF
+  Membre -- SESS
+  Membre -- NOTIF
+  Membre -- PRIV
+  Membre -- EXPORT
+  Membre -- SUPPR
+  VIP -- THEME
+  Premium -- OFF
+  THEME ..>:extend PREF
+  MDP ..>:include LIEN
+  ANNUL ..>:extend SUPPR
+  LIEN -- Courriel
+  note for THEME formule VIP vérifiée chez billing ; mis en pause sans VIP
+  note for EXPORT mot de passe exigé ; prêt en tâche de fond, téléchargeable 24 h
+  note for LIEN changement d’e-mail seulement

@@ -1,0 +1,56 @@
+<.auth_shell
+  flash={@flash}
+  eyebrow={gettext("Academy gate")}
+  title={gettext("Two-factor authentication")}
+>
+  <:lead>
+    {gettext(
+      "Your password is correct. Now enter the 6-digit code shown by your authenticator app."
+    )}
+  </:lead>
+
+  <div id="two-factor-error">
+    <%= case @error do %>
+      <% {:invalid, left} -> %>
+        <.notice kind="danger" role="alert">
+          {ngettext(
+            "This code is not valid. %{count} attempt left.",
+            "This code is not valid. %{count} attempts left.",
+            left
+          )}
+        </.notice>
+      <% :rate_limited -> %>
+        <.notice kind="danger" role="alert">
+          {gettext("Too many attempts from your connection. Please wait a minute and try again.")}
+        </.notice>
+      <% :unavailable -> %>
+        <.notice kind="warning" role="alert" title={gettext("Temporarily unavailable")}>
+          {gettext("Sign-in is temporarily unavailable. Please try again in a moment.")}
+        </.notice>
+      <% nil -> %>
+    <% end %>
+  </div>
+
+  <.form for={@form} action={~p"/login/2fa"} id="two-factor-form" class="space-y-4">
+    <.input
+      field={@form[:one_time_password]}
+      label={gettext("Authentication code")}
+      hint={
+        gettext(
+          "Lost your device? Enter one of your recovery codes instead (like abcd-efgh-jkmn-pqrs)."
+        )
+      }
+      autocomplete="one-time-code"
+      autocapitalize="none"
+      spellcheck="false"
+      maxlength="32"
+      autofocus
+      required
+    />
+    <.button type="submit" class="w-full">{gettext("Verify and log in")}</.button>
+  </.form>
+
+  <p class="text-sm text-muted">
+    <.link href={~p"/login"} class="link">{gettext("Start over")}</.link>
+  </p>
+</.auth_shell>

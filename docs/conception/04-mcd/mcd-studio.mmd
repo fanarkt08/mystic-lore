@@ -1,0 +1,92 @@
+%% MCD (Merise) — domaine studio (base ml_studio). Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine studio : projets, modules, leçons, médias, versions, collaborations et générations IA (notation Merise)
+%% @legende Trait plein : clé étrangère réelle (vers projects, modules ou lessons). Pointillés : identifiant d’une autre base (MEMBRE = accounts.users, AVENTURE = learning.adventures) ou d’une ligne de la même table sans clé étrangère (generations.retry_of : la génération relancée).
+%% @legende Un projet garde son contenu après la suppression du compte de son propriétaire s’il est partagé ou publié (owner_id devient nul) : d’où 0,1. Une version est un instantané immuable (déclencheur qui refuse toute modification) ; (project_id, number) est unique. Positions des modules et des leçons uniques par parent, contrôlées à la validation (contrainte DEFERRABLE).
+%% @legende « (1,1) » = identification relative : RÉGLAGES IA a pour clé primaire le user_id (consentement share_drafts_with_ai, désactivé par défaut). Simplification : inserted_at / updated_at omis.
+%% @ref MPD docs/conception/05-mpd/mpd-studio.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Sans-FK src/studio/priv/repo/migrations/20261123155002_create_studio.exs:5 | Users live in the accounts database: no foreign key on user ids.
+%% @ref Sans-propriétaire src/studio/priv/repo/migrations/20261123200000_allow_ownerless_projects.exs:5-7 | modify :owner_id, :binary_id, null: true
+%% @ref Publication src/studio/lib/studio/publishing.ex:321 | published_adventure_id: to_string(body["adventure_id"]),
+%% @ref Relance src/studio/lib/studio/ai.ex:102 | retry_of: retry_of
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef externe fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:6 4,color:#374151
+
+  MEMBRE["<b>MEMBRE</b><br/><i>accounts.users — autre base</i><br/><u>id</u>"]:::externe
+  AVENTURE["<b>AVENTURE</b><br/><i>learning.adventures — autre base</i><br/><u>id</u>"]:::externe
+
+  PROJET["<b>PROJET</b><br/><i>projects</i><br/><u>id</u><br/>title<br/>summary<br/>description<br/>objectives<br/>prerequisites<br/>audience<br/>level<br/>duration_minutes<br/>category<br/>cover<br/>status<br/>lock_version<br/>content_revision<br/>attestations<br/>attested_revision<br/>attested_at<br/>review_version<br/>submitted_at<br/>reviewed_at<br/>review_reason<br/>import_message<br/>published_slug<br/>published_version<br/>published_at"]:::entite
+  MODULE["<b>MODULE</b><br/><i>modules</i><br/><u>id</u><br/>position<br/>title<br/>lock_version"]:::entite
+  LECON["<b>LEÇON</b><br/><i>lessons</i><br/><u>id</u><br/>position<br/>title<br/>kind<br/>body<br/>xp_reward<br/>content<br/>lock_version"]:::entite
+  COLLAB["<b>COLLABORATION</b><br/><i>collaborators</i><br/><u>id</u><br/>username<br/>role"]:::entite
+  VERSION["<b>VERSION</b><br/><i>versions</i><br/><u>id</u><br/>number<br/>note<br/>source<br/>snapshot"]:::entite
+  IMAGE["<b>IMAGE</b><br/><i>images</i><br/><u>id</u><br/>alt<br/>content_type<br/>byte_size<br/>source"]:::entite
+  MEDIA["<b>MÉDIA</b><br/><i>media</i><br/><u>id</u><br/>kind<br/>content_type<br/>byte_size<br/>lang<br/>label"]:::entite
+  GEN["<b>GÉNÉRATION</b><br/><i>generations</i><br/><u>id</u><br/>kind<br/>status<br/>cost<br/>provider<br/>model<br/>brief<br/>result<br/>error<br/>credits<br/>applied_at<br/>started_at<br/>finished_at"]:::entite
+  REGLAGES["<b>RÉGLAGES IA</b><br/><i>member_settings</i><br/>share_drafts_with_ai"]:::entite
+
+  POSSEDER(["posséder"]):::association
+  RELIRE(["relire"]):::association
+  PUBLIER(["être publié en"]):::association
+  STRUCTURER(["structurer"]):::association
+  COMPOSER(["composer"]):::association
+  APPARTENIR(["appartenir à"]):::association
+  ACCUEILLIR(["accueillir"]):::association
+  COLLABORER(["collaborer"]):::association
+  INVITER(["inviter"]):::association
+  HISTORISER(["historiser"]):::association
+  AUTEUR(["enregistrer"]):::association
+  ILLUSTRER(["illustrer"]):::association
+  LIERIMG(["illustrer"]):::association
+  TELIMG(["téléverser"]):::association
+  STOCKER(["stocker"]):::association
+  TELMED(["téléverser"]):::association
+  GENERER(["générer pour"]):::association
+  CIBLER(["cibler"]):::association
+  DEMANDER(["demander"]):::association
+  RELANCER(["relancer"]):::association
+  CONSENTIR(["régler"]):::association
+
+  MEMBRE -.-|"0,n"| POSSEDER
+  POSSEDER -.-|"0,1"| PROJET
+  MEMBRE -.-|"0,n"| RELIRE
+  RELIRE -.-|"0,1"| PROJET
+  PROJET -.-|"0,1"| PUBLIER
+  PUBLIER -.-|"0,1"| AVENTURE
+  PROJET ---|"0,n"| STRUCTURER
+  STRUCTURER ---|"1,1"| MODULE
+  MODULE ---|"0,n"| COMPOSER
+  COMPOSER ---|"1,1"| LECON
+  PROJET ---|"0,n"| APPARTENIR
+  APPARTENIR ---|"1,1"| LECON
+  PROJET ---|"0,n"| ACCUEILLIR
+  ACCUEILLIR ---|"1,1"| COLLAB
+  MEMBRE -.-|"0,n"| COLLABORER
+  COLLABORER -.-|"1,1"| COLLAB
+  MEMBRE -.-|"0,n"| INVITER
+  INVITER -.-|"1,1"| COLLAB
+  PROJET ---|"0,n"| HISTORISER
+  HISTORISER ---|"1,1"| VERSION
+  MEMBRE -.-|"0,n"| AUTEUR
+  AUTEUR -.-|"1,1"| VERSION
+  PROJET ---|"0,n"| ILLUSTRER
+  ILLUSTRER ---|"1,1"| IMAGE
+  LECON ---|"0,n"| LIERIMG
+  LIERIMG ---|"0,1"| IMAGE
+  MEMBRE -.-|"0,n"| TELIMG
+  TELIMG -.-|"1,1"| IMAGE
+  PROJET ---|"0,n"| STOCKER
+  STOCKER ---|"1,1"| MEDIA
+  MEMBRE -.-|"0,n"| TELMED
+  TELMED -.-|"1,1"| MEDIA
+  PROJET ---|"0,n"| GENERER
+  GENERER ---|"1,1"| GEN
+  LECON ---|"0,n"| CIBLER
+  CIBLER ---|"0,1"| GEN
+  MEMBRE -.-|"0,n"| DEMANDER
+  DEMANDER -.-|"1,1"| GEN
+  GEN -.-|"0,n origine"| RELANCER
+  RELANCER -.-|"0,1 relance"| GEN
+  MEMBRE -.-|"0,1"| CONSENTIR
+  CONSENTIR -.-|"(1,1)"| REGLAGES

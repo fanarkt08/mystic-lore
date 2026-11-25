@@ -1,0 +1,49 @@
+%% MCD (Merise) — domaine billing (base ml_billing). Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine billing : abonnements, paiements, webhooks et crédits IA (notation Merise)
+%% @legende La base billing n’a AUCUNE clé étrangère : toutes les associations sont en pointillés. Elles passent par l’UUID du membre (user_id, autre base accounts) ou par des identifiants texte : provider_subscription_id (fournisseur de paiement), ref d’une écriture de crédits (« studio:gen:‹id de génération› » pour le studio).
+%% @legende « (1,1) » = identification relative : un COMPTE DE CRÉDITS a pour clé primaire le user_id du membre (une ligne par membre). Les écritures de crédits forment un registre en ajout seul (déclencheur qui refuse toute modification), ordonné par seq.
+%% @legende Unicités : un abonnement par membre (user_id) ; (provider, provider_event_id) des webhooks (déduplication) ; (provider, provider_session_id) des sessions ; (provider, provider_invoice_id) des factures ; (user_id, kind, ref) des écritures (idempotence). Simplification : inserted_at / updated_at omis.
+%% @ref MPD docs/conception/05-mpd/mpd-billing.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Sans-FK src/billing/priv/repo/migrations/20261123135138_create_billing.exs:5 | One row per user (users live in the accounts database: no foreign key).
+%% @ref Registre src/billing/priv/repo/migrations/20261123154346_create_credits.exs:5 | One row per user, locked by every credit operation (users live in accounts: no foreign key).
+%% @ref Ref-studio src/studio/lib/studio/ai/generation.ex:30 | "studio:gen:" <> id
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef externe fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:6 4,color:#374151
+
+  MEMBRE["<b>MEMBRE</b><br/><i>accounts.users — autre base</i><br/><u>id</u>"]:::externe
+  GENERATION["<b>GÉNÉRATION</b><br/><i>studio.generations — autre base</i><br/><u>id</u>"]:::externe
+
+  ABO["<b>ABONNEMENT</b><br/><i>subscriptions</i><br/><u>id</u><br/>plan<br/>status<br/>provider<br/>provider_customer_id<br/>provider_subscription_id<br/>current_period_start<br/>current_period_end<br/>cancel_at_period_end<br/>past_due_since<br/>last_event_at"]:::entite
+  FACTURE["<b>FACTURE</b><br/><i>invoices</i><br/><u>id</u><br/>provider<br/>provider_invoice_id<br/>provider_subscription_id<br/>amount_cents<br/>currency<br/>status<br/>period_start<br/>period_end<br/>hosted_url"]:::entite
+  CHECKOUT["<b>SESSION DE PAIEMENT</b><br/><i>checkout_sessions</i><br/><u>id</u><br/>plan<br/>status<br/>provider<br/>provider_session_id<br/>expires_at"]:::entite
+  WEBHOOK["<b>ÉVÉNEMENT DE PAIEMENT</b><br/><i>webhook_events</i><br/><u>id</u><br/>provider<br/>provider_event_id<br/>type<br/>event_created_at<br/>status<br/>error<br/>payload"]:::entite
+  COMPTE["<b>COMPTE DE CRÉDITS</b><br/><i>credit_accounts</i><br/>period<br/>plan<br/>allocation<br/>balance<br/>reserved"]:::entite
+  ECRITURE["<b>ÉCRITURE DE CRÉDITS</b><br/><i>credit_entries</i><br/><u>id</u><br/>seq<br/>kind<br/>amount<br/>delta<br/>balance_after<br/>ref<br/>reason<br/>period"]:::entite
+
+  SOUSCRIRE(["souscrire"]):::association
+  FACTURER(["facturer"]):::association
+  REGLER(["régler"]):::association
+  OUVRIR(["ouvrir"]):::association
+  CONCERNER(["concerner"]):::association
+  POSSEDER(["posséder"]):::association
+  MOUVEMENTER(["mouvementer"]):::association
+  RESERVER(["réserver pour"]):::association
+
+  MEMBRE -.-|"0,1"| SOUSCRIRE
+  SOUSCRIRE -.-|"1,1"| ABO
+  ABO -.-|"0,n"| FACTURER
+  FACTURER -.-|"0,1"| FACTURE
+  MEMBRE -.-|"0,n"| REGLER
+  REGLER -.-|"1,1"| FACTURE
+  MEMBRE -.-|"0,n"| OUVRIR
+  OUVRIR -.-|"1,1"| CHECKOUT
+  MEMBRE -.-|"0,n"| CONCERNER
+  CONCERNER -.-|"0,1"| WEBHOOK
+  MEMBRE -.-|"0,1"| POSSEDER
+  POSSEDER -.-|"(1,1)"| COMPTE
+  COMPTE -.-|"0,n"| MOUVEMENTER
+  MOUVEMENTER -.-|"1,1"| ECRITURE
+  GENERATION -.-|"0,n"| RESERVER
+  RESERVER -.-|"0,1"| ECRITURE

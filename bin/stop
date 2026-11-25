@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Arrête les nœuds lancés par bin/dev (et leurs watchers d'assets) : bin/stop [services…] (tous par défaut).
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ $# -gt 0 ]; then files=(); for s in "$@"; do files+=("$ROOT/tmp/pids/$s"); done; else files=("$ROOT"/tmp/pids/*); fi
+for f in "${files[@]}"; do
+  [ -f "$f" ] || continue
+  pid=$(cat "$f")
+  pkill -TERM -P "$pid" 2>/dev/null
+  kill "$pid" 2>/dev/null && echo "arrêté $(basename "$f")"
+  rm -f "$f"
+done

@@ -1,0 +1,22 @@
+# Production : HTTPS par Caddy, aucun port de service publié (Docker contourne le pare-feu ufw), seeds lancés à la main.
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml up -d --build
+# Les secrets viennent du .env du serveur, jamais de Git.
+services:
+  billing:
+    ports: !reset []
+  web:
+    ports: !reset []
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment: { PHX_HOST: "${PHX_HOST}" }
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web]
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,67 @@
+%% MCD (Merise) — domaine accounts, partie 2 : sanctions et appels, journal d'audit, incidents, support. Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine accounts (2/2) : sanctions, appels, audit, incidents et support (notation Merise)
+%% @legende Trait plein : clé étrangère réelle vers users ou vers une autre table de la base. Pointillés : identifiant d’un membre du staff gardé SANS clé étrangère dans la même base (issued_by, lifted_by, decided_by, actor_id, created_by, resolved_by, author_id), écrit par le code avec l’identifiant du membre du staff qui agit.
+%% @legende Contraintes notables : un seul appel OUVERT par sanction (index unique partiel) ; une sanction « restriction » a toujours une fin, un « warning » jamais ; une demande de support vient soit d’un membre (user_id), soit d’un visiteur (email), jamais des deux ; le journal d’audit refuse toute modification (déclencheur).
+%% @legende Simplifications : MEMBRE n’est montré que par son identifiant (détail dans la partie 1) ; inserted_at / updated_at omis ; audit_entries.target_id désigne un objet de n’importe quel service (texte, sans association).
+%% @ref MPD docs/conception/05-mpd/mpd-accounts.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Staff src/accounts/lib/accounts/sanctions.ex:97 | issued_by: staff.id,
+%% @ref Appel src/accounts/lib/accounts/sanctions.ex:266 | decided_by: staff.id,
+%% @ref Incident src/accounts/lib/accounts/incidents.ex:59-65 | created_by: staff.id
+%% @ref Audit src/accounts/lib/accounts/audit.ex:26 | actor_id: actor_id,
+%% @ref Support src/accounts/lib/accounts/support.ex:363 | author_id: staff.id,
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+
+  MEMBRE["<b>MEMBRE</b><br/><i>users — détail : partie 1</i><br/><u>id</u>"]:::entite
+  SANCTION["<b>SANCTION</b><br/><i>sanctions</i><br/><u>id</u><br/>kind<br/>reason<br/>ends_at<br/>ref<br/>lifted_at<br/>lift_reason"]:::entite
+  APPEL["<b>APPEL</b><br/><i>sanction_appeals</i><br/><u>id</u><br/>body<br/>status<br/>decision_reason<br/>decided_at"]:::entite
+  AUDIT["<b>ENTRÉE D’AUDIT</b><br/><i>audit_entries</i><br/><u>id</u><br/>service<br/>action<br/>target_type<br/>target_id<br/>reason<br/>metadata<br/>inserted_at"]:::entite
+  INCIDENT["<b>INCIDENT</b><br/><i>incidents</i><br/><u>id</u><br/>title<br/>severity<br/>status<br/>summary<br/>resolved_at"]:::entite
+  MAJ["<b>MISE À JOUR D’INCIDENT</b><br/><i>incident_updates</i><br/><u>id</u><br/>body<br/>status<br/>severity<br/>inserted_at"]:::entite
+  DEMANDE["<b>DEMANDE DE SUPPORT</b><br/><i>support_requests</i><br/><u>id</u><br/>reference<br/>email<br/>topic<br/>message<br/>locale<br/>status<br/>internal_note<br/>answered_at<br/>closed_at"]:::entite
+  REPONSE["<b>RÉPONSE DU SUPPORT</b><br/><i>support_replies</i><br/><u>id</u><br/>body<br/>email_status<br/>inserted_at"]:::entite
+
+  VISER(["viser"]):::association
+  POSER(["poser"]):::association
+  LEVER(["lever"]):::association
+  CONTESTER(["contester"]):::association
+  FAIREAPPEL(["faire appel"]):::association
+  TRANCHER(["trancher"]):::association
+  AGIR(["agir"]):::association
+  OUVRIR(["ouvrir"]):::association
+  RESOUDRE(["résoudre"]):::association
+  JALONNER(["jalonner"]):::association
+  REDIGER(["rédiger"]):::association
+  SOUMETTRE(["soumettre"]):::association
+  REPONDRE(["recevoir"]):::association
+  ECRIRE(["écrire"]):::association
+
+  MEMBRE ---|"0,n"| VISER
+  VISER ---|"1,1"| SANCTION
+  MEMBRE -.-|"0,n"| POSER
+  POSER -.-|"1,1"| SANCTION
+  MEMBRE -.-|"0,n"| LEVER
+  LEVER -.-|"0,1"| SANCTION
+  SANCTION ---|"0,n"| CONTESTER
+  CONTESTER ---|"1,1"| APPEL
+  MEMBRE ---|"0,n"| FAIREAPPEL
+  FAIREAPPEL ---|"1,1"| APPEL
+  MEMBRE -.-|"0,n"| TRANCHER
+  TRANCHER -.-|"0,1"| APPEL
+  MEMBRE -.-|"0,n"| AGIR
+  AGIR -.-|"1,1"| AUDIT
+  MEMBRE -.-|"0,n"| OUVRIR
+  OUVRIR -.-|"1,1"| INCIDENT
+  MEMBRE -.-|"0,n"| RESOUDRE
+  RESOUDRE -.-|"0,1"| INCIDENT
+  INCIDENT ---|"0,n"| JALONNER
+  JALONNER ---|"1,1"| MAJ
+  MEMBRE -.-|"0,n"| REDIGER
+  REDIGER -.-|"1,1"| MAJ
+  MEMBRE ---|"0,n"| SOUMETTRE
+  SOUMETTRE ---|"0,1"| DEMANDE
+  DEMANDE ---|"0,n"| REPONDRE
+  REPONDRE ---|"1,1"| REPONSE
+  MEMBRE -.-|"0,n"| ECRIRE
+  ECRIRE -.-|"1,1"| REPONSE

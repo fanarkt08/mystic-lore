@@ -1,0 +1,185 @@
+/* Leçons hors ligne : carte de la leçon, section des paramètres, page /offline, avis de fin d'accès.
+   Cibles ≥ 44 px (boutons .btn), aucun style en ligne (CSP), lisible à 390 px. */
+@layer components {
+  /* ---------- carte « Offline copy » (page de la leçon) ---------- */
+  .offline-card {
+    display: grid;
+    gap: 16px;
+    border-color: color-mix(in srgb, var(--color-info) 35%, var(--color-line));
+  }
+  .offline-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .offline-card-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-info) 12%, transparent);
+    color: var(--color-info);
+  }
+  .offline-facts {
+    display: grid;
+    gap: 6px;
+    padding-left: 20px;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    list-style: disc;
+  }
+
+  /* ---------- listes de copies (paramètres, page hors ligne) ---------- */
+  .offline-list {
+    display: grid;
+    gap: 12px;
+  }
+  .offline-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .offline-item-title {
+    display: inline-block;
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  a.offline-item-title {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-magic) 50%, transparent);
+    text-underline-offset: 4px;
+  }
+  a.offline-item-title:hover {
+    color: var(--color-magic);
+  }
+
+  /* ---------- synchronisation et résultats ---------- */
+  .offline-sync {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+  }
+  .offline-results {
+    display: grid;
+    gap: 8px;
+  }
+  .offline-result {
+    display: grid;
+    gap: 2px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-line);
+    border-left-width: 4px;
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+    overflow-wrap: anywhere;
+  }
+  .offline-result-right {
+    border-left-color: var(--color-success);
+  }
+  .offline-result-wrong,
+  .offline-result-refused {
+    border-left-color: var(--color-danger);
+  }
+  .offline-result-retry {
+    border-left-color: var(--color-reward);
+  }
+
+  /* ---------- page hors ligne ---------- */
+  .offline-app {
+    display: grid;
+    gap: 24px;
+    max-width: 56rem;
+  }
+  .offline-network {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 4px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .offline-network:empty {
+    display: none;
+  }
+  .offline-network[data-state="online"] {
+    border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+    color: var(--color-success);
+  }
+  .offline-network[data-state="offline"] {
+    border-color: color-mix(in srgb, var(--color-reward) 55%, transparent);
+    color: var(--color-reward);
+  }
+  .offline-lesson {
+    display: grid;
+    gap: 24px;
+    min-width: 0;
+  }
+  .offline-lesson .story {
+    overflow-wrap: anywhere;
+  }
+  .offline-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* ---------- avis : copies supprimées à la fin de l'accès Premium ---------- */
+  .offline-notice {
+    position: fixed;
+    bottom: 88px;
+    left: 50%;
+    z-index: 65;
+    display: flex;
+    flex-wrap: wrap;
+    width: min(40rem, calc(100vw - 24px));
+    align-items: center;
+    gap: 12px;
+    padding: 8px 8px 8px 16px;
+    border: 1px solid color-mix(in srgb, var(--color-reward) 55%, var(--color-line));
+    border-radius: var(--radius-card);
+    background: var(--color-raised);
+    box-shadow: var(--shadow-soft);
+    color: var(--color-ink);
+    transform: translateX(-50%);
+  }
+  .offline-notice > [class*="hero-"] {
+    color: var(--color-reward);
+  }
+  @media (min-width: 1024px) {
+    .offline-notice {
+      bottom: 24px;
+    }
+  }
+  @media (max-width: 479.98px) {
+    .offline-notice .btn {
+      width: 100%;
+    }
+  }
+  .connection-status #connection-status-pending:not([hidden]) {
+    margin-top: 2px;
+  }
+  @media (max-width: 479.98px) {
+    .connection-status #connection-offline-link {
+      width: 100%;
+    }
+  }
+}

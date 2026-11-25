@@ -1,0 +1,40 @@
+# CI : pour chaque projet Elixir, format, compilation sans avertissement, audit des dépendances et tests.
+name: ci
+on: [push, pull_request]
+jobs:
+  service:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [shared, accounts, learning, billing, social, multiplayer, community, studio, notifications, web]
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      MIX_ENV: test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+    defaults:
+      run:
+        working-directory: src/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with: { otp-version: "29", elixir-version: "1.20.5" }
+      - uses: actions/cache@v4
+        with:
+          path: |
+            src/${{ matrix.service }}/deps
+            src/${{ matrix.service }}/_build
+          key: ${{ runner.os }}-${{ matrix.service }}-${{ hashFiles(format('src/{0}/mix.lock', matrix.service)) }}
+      - run: mix deps.get
+      - run: mix format --check-formatted
+      - run: mix compile --warnings-as-errors
+      - run: mix hex.audit
+      - run: mix test

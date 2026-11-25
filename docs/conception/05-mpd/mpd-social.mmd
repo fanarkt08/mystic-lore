@@ -1,0 +1,112 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_social_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_social_dev (service social) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 3 migrations appliquées, dernière : 20261125090000) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_social_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • attachments — attachments_kind : (kind IN ('image', 'pdf')) AND (scan IN ('clean', 'unscanned'))
+%% @legende • attachments — attachments_text : (char_length(alt_text) <= 300) AND (char_length(filename) <= 120)
+%% @legende • blocks — blocks_not_self : blocker_id <> blocked_id
+%% @legende • conversations — conversations_shape : ((kind = 'direct') AND (user_low IS NOT NULL) AND (user_high IS NOT NULL) AND (user_low < user_high) AND (name IS NULL) AND (owner_id IS NULL)) OR ((kind = 'group') AND (user_low IS NULL) AND (user_high IS NULL) AND (owner_id IS NOT NULL) AND ((char_length(name) >= 1) AND (char_length(name) <= 60)))
+%% @legende • friendships — friendships_not_self : requester_id <> addressee_id
+%% @legende • friendships — friendships_status : status IN ('pending', 'accepted')
+%% @legende • messages — messages_body_length : (body IS NULL) OR ((char_length(body) >= 1) AND (char_length(body) <= 2000))
+%% @legende • messages — messages_kind : ((kind = 'text') AND (system IS NULL)) OR ((kind = 'system') AND (system IS NOT NULL) AND (body IS NULL))
+%% @legende • reports — reports_reason : reason IN ('harassment', 'spam', 'inappropriate', 'other')
+%% @legende • reports — reports_resolution : (resolution IS NULL) OR (resolution IN ('dismiss', 'remove_message', 'warn', 'restrict'))
+%% @legende • reports — reports_status : status IN ('open', 'resolved')
+%% @legende • reports — reports_target_type : target_type IN ('user', 'message')
+%% @legende • settings — settings_values : (friend_requests IN ('everyone', 'friends_of_friends', 'nobody')) AND (group_adds IN ('friends', 'nobody')) AND (lobby_invites IN ('friends', 'nobody'))
+%% @legende Index uniques partiels ou sur expression :
+%% @legende • friendships — friendships_pair_index : UNIQUE (LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id))
+erDiagram
+  direction LR
+  attachments {
+    uuid id PK
+    uuid message_id FK, UK "NN · → messages.id CASCADE"
+    uuid uploader_id "NN · ⇢ accounts.users"
+    varchar(255) kind "NN"
+    varchar(255) content_type "NN"
+    integer byte_size "NN"
+    integer width
+    integer height
+    varchar(255) filename
+    text alt_text
+    varchar(255) scan "NN"
+    varchar(255) storage_key UK
+    timestamp erased_at
+    timestamp inserted_at "NN"
+  }
+  blocks {
+    uuid blocker_id PK "⇢ accounts.users"
+    uuid blocked_id PK "⇢ accounts.users"
+    timestamp inserted_at "NN"
+  }
+  conversation_members {
+    uuid conversation_id PK, FK "→ conversations.id CASCADE"
+    uuid user_id PK "⇢ accounts.users"
+    timestamp last_read_at
+    timestamp joined_at "NN · déf. now()"
+    timestamp muted_until
+  }
+  conversations {
+    uuid id PK
+    uuid user_low UK "UQ (user_low, user_high) · ⇢ accounts.users"
+    uuid user_high UK "UQ (user_low, user_high) · ⇢ accounts.users"
+    timestamp inserted_at "NN"
+    varchar(255) kind "NN · déf. 'direct'"
+    varchar(255) name
+    uuid owner_id "⇢ accounts.users"
+  }
+  friendships {
+    uuid id PK
+    uuid requester_id "NN · UQ (LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id)) · ⇢ accounts.users"
+    uuid addressee_id "NN · UQ (LEAST(requester_id, addressee_id), GREATEST(requester_id, addressee_id)) · ⇢ accounts.users"
+    varchar(255) status "NN · déf. 'pending'"
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  messages {
+    uuid id PK
+    uuid conversation_id FK "NN · → conversations.id CASCADE"
+    uuid sender_id "NN · ⇢ accounts.users"
+    text body
+    timestamp inserted_at "NN"
+    timestamp removed_at
+    uuid removed_by "⇢ accounts.users"
+    varchar(255) kind "NN · déf. 'text'"
+    jsonb system
+  }
+  reports {
+    uuid id PK
+    uuid reporter_id "NN · ⇢ accounts.users"
+    varchar(255) target_type "NN"
+    uuid target_id "NN · ⇢ accounts.users ou messages selon target_type"
+    varchar(255) reason "NN"
+    text details
+    text message_body
+    uuid message_sender_id "⇢ accounts.users"
+    timestamp message_sent_at
+    timestamp inserted_at "NN"
+    varchar(255) status "NN · déf. 'open'"
+    varchar(255) resolution
+    text resolution_reason
+    uuid resolved_by "⇢ accounts.users"
+    timestamp resolved_at
+    uuid sanction_id "⇢ accounts.sanctions"
+    uuid message_attachment_id "⇢ attachments (l'instantané survit)"
+  }
+  settings {
+    uuid user_id PK "⇢ accounts.users"
+    boolean show_online "NN · déf. true"
+    boolean read_receipts "NN · déf. true"
+    varchar(255) friend_requests "NN · déf. 'everyone'"
+    varchar(255) group_adds "NN · déf. 'friends'"
+    varchar(255) lobby_invites "NN · déf. 'friends'"
+    timestamp updated_at "NN"
+  }
+  messages ||..o| attachments : "message_id"
+  conversations ||--o{ conversation_members : "conversation_id"
+  conversations ||..o{ messages : "conversation_id"

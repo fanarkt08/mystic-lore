@@ -1,0 +1,25 @@
+<.auth_shell flash={@flash} eyebrow={gettext("One last step")} title={gettext("Check your email")}>
+  <:lead>
+    {gettext(
+      "We sent a confirmation link to %{email}. Open it to activate your account, then log in.",
+      email: @email
+    )}
+  </:lead>
+
+  <div id="check-email" class="space-y-4">
+    <.notice :if={@dev_hints} id="dev-mailbox" kind="info" title={gettext("Development only")}>
+      {gettext("E-mails are not really sent here: read them in the accounts dev mailbox.")}
+      <:actions>
+        <.button href={mailbox_url()} variant="secondary" target="_blank" rel="noopener">
+          <.icon name="hero-envelope-open" /> {gettext("Open the dev mailbox")}
+        </.button>
+      </:actions>
+    </.notice>
+
+    <p class="text-sm text-muted">
+      {gettext("No email after a few minutes? Check your spam folder or ask for a new link.")}
+    </p>
+    <.resend_form id="resend-confirmation" email={@email} label={gettext("Send a new link")} />
+    <.button href={~p"/login"} variant="ghost">{gettext("Go to log in")}</.button>
+  </div>
+</.auth_shell>

@@ -1,0 +1,35 @@
+%% Cas d'utilisation — acteurs et généralisations (référence commune à tous les diagrammes de cas d'utilisation).
+%% @titre Acteurs de MysticLore et généralisations
+%% @legende Flèche à triangle creux = généralisation UML : l’acteur spécialisé peut tout ce que peut l’acteur général. Les formules (Free, Premium, VIP) et les rôles (user, moderator, admin) sont indépendants : un VIP reste « user », un modérateur a aussi une formule.
+%% @legende Visiteur et Membre ne sont pas liés par une généralisation : s’inscrire et se connecter sont réservés au visiteur (un membre connecté est redirigé) ; les cas communs (catalogue, forum en lecture, aide…) sont reliés aux deux acteurs.
+%% @legende Membre VIP spécialise Membre Premium : l’accès premium est accordé aux formules premium ET vip (MlLearning.Entitlements) ; le VIP ajoute les thèmes VIP et la génération d’images, et reçoit 1 000 crédits IA par mois au lieu de 300.
+%% @legende Systèmes externes, toujours facultatifs en développement : Stripe (mode simulé local sans clés), fournisseur d’IA Anthropic (fournisseur DÉMO local sans clé), service d’e-mail (boîte /dev/mailbox en dev, fournisseur à choisir en production), antivirus ClamAV (sans CLAMD_HOST, fichiers « non analysés »).
+%% @ref Rôles src/accounts/priv/repo/migrations/20261123134833_create_accounts.exs:23-24 | check: "role IN ('user', 'moderator', 'admin')"
+%% @ref Formules src/billing/priv/repo/migrations/20261123135138_create_billing.exs:29-30 | check: "plan IN ('free','premium','vip')"
+%% @ref Premium src/learning/lib/learning/entitlements.ex:10 | @premium_plans ~w(premium vip)
+%% @ref Crédits docs/contracts/billing-credits.md:6 | free **20**, premium **300**, vip **1000** par mois UTC
+%% @ref Staff docs/admin-permissions.md:3-4 | Rôles : **user** (membre), **moderator**, **admin**
+usecase-beta
+  direction TB
+  actor Visiteur
+  actor Membre
+  actor Free(Membre Free)
+  actor Premium(Membre Premium)
+  actor VIP(Membre VIP)
+  actor Moderateur(Modérateur)
+  actor Admin(Administrateur)
+  actor Stripe <<système externe>>
+  actor IA(Fournisseur d’IA — Anthropic) <<système externe>>
+  actor Courriel(Service d’e-mail) <<système externe>>
+  actor ClamAV(Antivirus ClamAV — facultatif) <<système externe>>
+  Free --|> Membre
+  Premium --|> Membre
+  VIP --|> Premium
+  Moderateur --|> Membre
+  Admin --|> Moderateur
+  note for Visiteur personne non connectée : pages publiques, catalogue, forum en lecture, inscription, connexion, aide, contact
+  note for Membre compte confirmé et connecté — rôle user ; formule free par défaut
+  note for Premium formule premium : aventures premium, leçons hors ligne, 300 crédits IA par mois
+  note for VIP formule vip : en plus, thèmes VIP, images IA, 1 000 crédits IA par mois
+  note for Moderateur rôle moderator : signalements, sanctions, appels, incidents, support, relecture du studio
+  note for Admin rôle admin : en plus, rôles, journal d’audit, abonnements, ajustement de crédits

@@ -1,0 +1,46 @@
+%% MCD (Merise) — domaine accounts, partie 1 : comptes, sécurité, données personnelles. Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine accounts (1/2) : comptes, sécurité et données personnelles (notation Merise)
+%% @legende Notation Merise : rectangle = entité (nom, table physique en italique, identifiant souligné, propriétés) ; ovale = association ; « min,max » = participations d’une occurrence de l’entité. « (1,1) » entre parenthèses = identification relative : ÉTAPE DE SUPPRESSION est identifiée par son membre ET son service (clé primaire composée user_id, service).
+%% @legende Toutes les associations de ce diagramme reposent sur une clé étrangère réelle vers users (ON DELETE CASCADE). ÉCHEC DE CONNEXION et ÉVÉNEMENT DE LIMITATION ne sont liés à aucune entité : ils sont comptés par l’adresse saisie (même inexistante) ou par une clé texte (« totp:‹id› », « export:‹id› », HMAC d’une adresse…).
+%% @legende Secrets jamais stockés en clair : token_hash et code_hash sont des SHA-256 ; totp_secret est chiffré (AES-256-GCM) ; hashed_password est un hachage bcrypt ; ip est anonymisée avant stockage.
+%% @legende Simplifications : inserted_at / updated_at omis (sauf mention) ; unicités : users.email, users.username, token_hash de chaque jeton et session, (user_id, code_hash) des codes de récupération.
+%% @ref MPD docs/conception/05-mpd/mpd-accounts.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Utilisateur src/accounts/lib/accounts/user.ex:6 | schema "users" do
+%% @ref Étapes src/accounts/priv/repo/migrations/20261123200001_add_privacy.exs:17-23 | add :service, :string, primary_key: true
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+
+  MEMBRE["<b>MEMBRE</b><br/><i>users</i><br/><u>id</u><br/>email<br/>username<br/>display_name<br/>bio<br/>hashed_password<br/>role<br/>confirmed_at<br/>totp_secret<br/>totp_pending_secret<br/>totp_last_step<br/>totp_enabled_at<br/>deletion_scheduled_at<br/>deleted_at<br/>restricted_until<br/>pronouns<br/>interests<br/>cover<br/>profile_visibility<br/>avatar_crest<br/>avatar_image<br/>preferences<br/>onboarding_status<br/>onboarding_at"]:::entite
+  JCONF["<b>JETON DE CONFIRMATION</b><br/><i>confirmation_tokens</i><br/><u>id</u><br/>token_hash<br/>inserted_at"]:::entite
+  JMAIL["<b>JETON PAR E-MAIL</b><br/><i>user_tokens</i><br/><u>id</u><br/>context<br/>token_hash<br/>sent_to<br/>inserted_at"]:::entite
+  SESSION["<b>SESSION</b><br/><i>sessions</i><br/><u>id</u><br/>token_hash<br/>last_used_at<br/>user_agent<br/>ip"]:::entite
+  CHAL["<b>CHALLENGE DE CONNEXION</b><br/><i>login_challenges</i><br/><u>id</u><br/>token_hash<br/>attempts<br/>inserted_at"]:::entite
+  CODE["<b>CODE DE RÉCUPÉRATION</b><br/><i>recovery_codes</i><br/><u>id</u><br/>code_hash"]:::entite
+  EXPORT["<b>EXPORT DE DONNÉES</b><br/><i>data_exports</i><br/><u>id</u><br/>status<br/>data<br/>failed_services<br/>completed_at<br/>expires_at"]:::entite
+  ETAPE["<b>ÉTAPE DE SUPPRESSION</b><br/><i>deletion_steps</i><br/><u>service</u><br/>inserted_at"]:::entite
+  ECHEC["<b>ÉCHEC DE CONNEXION</b><br/><i>login_failures</i><br/><u>id</u><br/>email<br/>inserted_at"]:::entite
+  LIMITE["<b>ÉVÉNEMENT DE LIMITATION</b><br/><i>throttle_events</i><br/><u>id</u><br/>key<br/>inserted_at"]:::entite
+
+  RECEVOIR(["recevoir"]):::association
+  DEMANDER(["demander"]):::association
+  OUVRIR(["ouvrir"]):::association
+  DECLENCHER(["déclencher"]):::association
+  DETENIR(["détenir"]):::association
+  EXPORTER(["demander un export"]):::association
+  ENREGISTRER(["enregistrer"]):::association
+
+  MEMBRE ---|"0,n"| RECEVOIR
+  RECEVOIR ---|"1,1"| JCONF
+  MEMBRE ---|"0,n"| DEMANDER
+  DEMANDER ---|"1,1"| JMAIL
+  MEMBRE ---|"0,n"| OUVRIR
+  OUVRIR ---|"1,1"| SESSION
+  MEMBRE ---|"0,n"| DECLENCHER
+  DECLENCHER ---|"1,1"| CHAL
+  MEMBRE ---|"0,n"| DETENIR
+  DETENIR ---|"1,1"| CODE
+  MEMBRE ---|"0,n"| EXPORTER
+  EXPORTER ---|"1,1"| EXPORT
+  MEMBRE ---|"0,n"| ENREGISTRER
+  ENREGISTRER ---|"(1,1)"| ETAPE

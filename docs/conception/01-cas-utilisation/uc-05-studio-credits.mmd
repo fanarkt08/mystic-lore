@@ -1,0 +1,61 @@
+%% Cas d'utilisation — écran 6 « studio IA et crédits », relecture par un modérateur, publication dans le catalogue.
+%% @titre Cas d’utilisation — Studio IA et crédits (écran 6)
+%% @legende Une génération réserve d’abord ses crédits chez billing, puis est exécutée par une tâche de fond ; succès = crédits consommés, échec ou annulation = crédits rendus (voir la séquence e). Le contexte du projet n’est envoyé à un fournisseur externe que si le demandeur ET le propriétaire ont consenti.
+%% @legende Publication : contrôles automatiques et déclarations de l’auteur, relecture par un membre du staff qui n’est ni propriétaire ni éditeur du projet, puis import dans learning ; l’aventure publiée est gratuite.
+%% @ref Projet src/web/lib/web_web/live/studio/new_live.ex:20 | def handle_event("create"
+%% @ref Rédiger src/web/lib/web_web/live/studio/project_live.ex:179-266 | def handle_event("save_lesson"
+%% @ref Médias src/web/lib/web_web/live/studio/project_live.ex:404-429 | def handle_event("upload_video"
+%% @ref Collaborateurs src/web/lib/web_web/live/studio/project_live.ex:501-518 | def handle_event("invite"
+%% @ref Versions src/web/lib/web_web/live/studio/project_live.ex:541-557 | def handle_event("restore_version"
+%% @ref Générer src/web/lib/web_web/live/studio/project_live.ex:301-321 | def handle_event("confirm_generation"
+%% @ref Appliquer src/web/lib/web_web/live/studio/project_live.ex:371 | def handle_event("apply_generation"
+%% @ref Consentement src/web/lib/web_web/live/studio/project_live.ex:388 | def handle_event("consent"
+%% @ref Soumettre src/web/lib/web_web/live/studio/project_live.ex:580-596 | def handle_event(action, _params, socket) when action in ["submit", "withdraw"] do
+%% @ref Crédits src/web/lib/web_web/routes/studio.ex:17 | live "/studio/credits", Studio.CreditsLive
+%% @ref Relecture src/web/lib/web_web/live/studio/review_live.ex:84-126 | def handle_event("retry_import"
+%% @ref Image-VIP src/studio/lib/studio/ai.ex:498-506 | vip_required
+usecase-beta
+  direction LR
+  actor Membre
+  actor VIP(Membre VIP)
+  actor Moderateur(Modérateur)
+  actor IA(Fournisseur d’IA) <<système externe>>
+  systemBoundary sys(MysticLore — studio)
+    PROJ(Créer un projet d’aventure)
+    REDIG(Rédiger modules et leçons)
+    MEDIA(Téléverser images, vidéo et sous-titres)
+    COLLAB(Inviter des collaborateurs)
+    VERS(Enregistrer ou restaurer une version)
+    GEN(Générer un plan, un brouillon ou un retour avec l’IA)
+    RESA(Réserver puis régler les crédits IA)
+    CTX(Partager le contexte du projet avec l’IA)
+    IMG(Générer une image avec l’IA)
+    APPL(Appliquer un résultat au projet)
+    CONSENT(Donner ou retirer son consentement)
+    CRED(Consulter ses crédits et l’historique)
+    SOUM(Soumettre le projet à la relecture)
+    CHECK(Passer les contrôles automatiques)
+    RELIRE(Relire un projet soumis)
+    PUBL(Publier l’aventure dans le catalogue)
+  end
+  Membre -- PROJ
+  Membre -- REDIG
+  Membre -- MEDIA
+  Membre -- COLLAB
+  Membre -- VERS
+  Membre -- GEN
+  Membre -- APPL
+  Membre -- CONSENT
+  Membre -- CRED
+  Membre -- SOUM
+  VIP -- IMG
+  Moderateur -- RELIRE
+  GEN ..>:include RESA
+  CTX ..>:extend GEN
+  IMG ..>:include RESA
+  SOUM ..>:include CHECK
+  PUBL ..>:extend RELIRE
+  GEN -- IA
+  note for CTX si le demandeur et le propriétaire ont consenti ; sinon le brief seul
+  note for PUBL si le relecteur approuve ; import par learning
+  note for COLLAB propriétaire ; éditeur ou lecteur

@@ -1,0 +1,29 @@
+/* Sécurité du compte : composants propres (les classes de app.css d'abord). */
+@layer components {
+  /* QR code : fond blanc et marge de silence, indispensables à la lecture par les applications. */
+  .qr-code {
+    width: 232px;
+    max-width: 100%;
+    height: auto;
+    padding: 12px;
+    border-radius: var(--radius-card);
+    background: var(--color-white);
+  }
+  .secret-key {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.9375rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+  .recovery-code-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: 6px 16px;
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    color: var(--color-ink);
+  }
+}

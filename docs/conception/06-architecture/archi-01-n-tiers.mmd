@@ -1,0 +1,104 @@
+%% Architecture logicielle n-tiers de MysticLore, telle que codée (environnement de développement : bin/dev, 9 nœuds en cluster).
+%% @titre Architecture logicielle n-tiers : navigateur, BFF LiveView, 8 services métier, une base par service
+%% @legende Seul web (BFF) est exposé au navigateur ; les 8 services n’acceptent sur /api/* qu’un jeton interne HMAC (MlShared.InternalToken : Plug.Crypto, secret INTERNAL_SECRET partagé, 5 min de validité, charge « svc » = service appelant et « sub » = membre). Exception : POST /webhooks/stripe de billing, authentifié par la signature Stripe.
+%% @legende Temps réel : les 9 nœuds Erlang forment un cluster (CLUSTER_NODES) qui partage Phoenix.PubSub ; les services publient (« user:‹id› », « entitlements », « members », « lobby:‹id› », « studio:project:‹id› »), les LiveView de web s’abonnent. Tâches durables : Oban, dans la base du service (accounts, billing, studio, notifications).
+%% @legende Fichiers privés hors base : avatars (ACCOUNTS_STORAGE_DIR), pièces jointes (SOCIAL_STORAGE_DIR), images et médias du studio (STUDIO_STORAGE_DIR). Systèmes externes facultatifs en développement (mode simulé local, fournisseur IA DÉMO, boîte e-mail locale, pas d’antivirus, moteur de simulation Elixir de repli).
+%% @ref Jeton src/shared/lib/ml_shared/internal_token.ex:6-7 | @salt "ml-internal-v1"
+%% @ref Client src/shared/lib/ml_shared/client.ex:32-41 | token = MlShared.InternalToken.sign(caller(), as)
+%% @ref Plug src/shared/lib/ml_shared/plug/internal.ex:11-15 | {:ok, %{"svc" => svc} = data} <- InternalToken.verify(token),
+%% @ref PubSub src/shared/lib/ml_shared/application.ex:11-15 | {Phoenix.PubSub, name: MlShared.PubSub},
+%% @ref Cluster src/shared/lib/ml_shared/cluster.ex:25-28 | System.get_env("CLUSTER_NODES")
+%% @ref Socket src/web/lib/web_web/endpoint.ex:18 | socket "/live", Phoenix.LiveView.Socket,
+%% @ref Cookie src/web/lib/web_web/endpoint.ex:5-14 | encryption_salt: "Qm3vT8xL",
+%% @ref Hors-ligne src/web/lib/web_web/router.ex:35-42 | get "/sw.js", MysticWeb.OfflineController, :service_worker
+%% @ref Webhook src/billing/lib/billing_web/router.ex:16-21 | post "/webhooks/stripe", WebhookController, :stripe
+%% @ref Oban-accounts src/accounts/config/config.exs:17-20 | queues: [privacy: 3, notify: 3],
+%% @ref Oban-billing src/billing/config/config.exs:37-42 | queues: [default: 5, notify: 3],
+%% @ref Oban-studio src/studio/config/config.exs:21-25 | queues: [ai: 3, credits: 5, publish: 2, notify: 3],
+%% @ref Oban-notif src/notifications/config/config.exs:24-28 | queues: [email: 5, maintenance: 1],
+%% @ref Stripe src/billing/lib/billing/stripe.ex:7 | @base_url "https://api.stripe.com"
+%% @ref Anthropic src/studio/lib/studio/ai/anthropic.ex:10 | @url "https://api.anthropic.com/v1/messages"
+%% @ref E-mail src/accounts/config/config.exs:36 | config :accounts, MlAccounts.Mailer, adapter: Swoosh.Adapters.Local
+%% @ref ClamAV src/social/config/runtime.exs:30 | if host = env.("CLAMD_HOST") do
+%% @ref Rust src/learning/lib/learning/sim/native.ex:30 | Port.open({:spawn_executable, path}
+flowchart LR
+  classDef comp fill:#f2f3f5,stroke:#374151,stroke-width:1.2px,color:#111111
+  classDef base fill:#ffffff,stroke:#374151,stroke-width:1.2px,color:#111111
+  classDef ext fill:#ffffff,stroke:#6b7280,stroke-width:1.2px,stroke-dasharray:6 4,color:#374151
+
+  subgraph T1["Tier 1 — Présentation : navigateur"]
+    NAV["<b>Pages LiveView</b><br/>HTML rendu par le serveur<br/>+ WebSocket /live"]:::comp
+    COOK["<b>Cookie _mystic_web</b><br/>jeton de session opaque,<br/>signé et chiffré"]:::comp
+    SW["<b>Service worker /sw.js</b><br/>Cache Storage : fichiers<br/>statiques et page /offline"]:::comp
+    IDB[("<b>IndexedDB</b><br/>mysticlore-offline")]:::base
+  end
+
+  subgraph T2["Tier 2 — Application : web :4000 (BFF), seul service exposé, sans base"]
+    AUTH["<b>MysticWeb.Auth</b><br/>session résolue par accounts"]:::comp
+    OFFC["<b>OfflineController</b><br/>/offline, /offline/packages,<br/>/offline/sync"]:::comp
+    APIC["<b>MysticWeb.Api → MlShared.Client</b><br/>jeton interne HMAC,<br/>délais 2 s / 5 s"]:::comp
+    PRES["<b>MysticWeb.Presence</b><br/>statut en ligne"]:::comp
+  end
+
+  subgraph T3["Tier 3 — Métier : 8 macroservices Phoenix (API JSON interne)"]
+    ACC["<b>accounts :4001</b><br/>comptes, 2FA, profil, sanctions,<br/>audit, support, données"]:::comp
+    LRN["<b>learning :4002</b><br/>catalogue, leçons, XP,<br/>badges, import du studio"]:::comp
+    BIL["<b>billing :4003</b><br/>formules, checkout, webhooks,<br/>droits, crédits IA"]:::comp
+    SOC["<b>social :4004</b><br/>amis, messages, groupes,<br/>pièces jointes, signalements"]:::comp
+    MUL["<b>multiplayer :4005</b><br/>salons, The Rune Relay"]:::comp
+    COM["<b>community :4006</b><br/>forum, modération"]:::comp
+    STU["<b>studio :4007</b><br/>projets, IA, publication"]:::comp
+    NOT["<b>notifications :4008</b><br/>centre de notifications"]:::comp
+  end
+
+  subgraph T4["Tier 4 — Données : une base PostgreSQL par service + fichiers privés"]
+    D1[("ml_accounts")]:::base
+    F1[/"ACCOUNTS_STORAGE_DIR<br/>avatars"/]:::base
+    D2[("ml_learning")]:::base
+    D3[("ml_billing")]:::base
+    D4[("ml_social")]:::base
+    F2[/"SOCIAL_STORAGE_DIR<br/>pièces jointes"/]:::base
+    D5[("ml_multiplayer")]:::base
+    D6[("ml_community")]:::base
+    D7[("ml_studio")]:::base
+    F3[/"STUDIO_STORAGE_DIR<br/>images, médias"/]:::base
+    D8[("ml_notifications")]:::base
+  end
+
+  subgraph TR["Transverse : cluster Erlang des 9 nœuds"]
+    PS["<b>Phoenix.PubSub partagé</b><br/>MlShared.PubSub<br/>« user:‹id› » · « entitlements »<br/>« members » · « lobby:‹id› »<br/>« studio:project:‹id› »"]:::comp
+    OB["<b>Oban</b> — tâches durables dans la base<br/>du service : accounts, billing,<br/>studio, notifications"]:::comp
+  end
+
+  subgraph EXT["Systèmes externes"]
+    STRIPE["Stripe<br/>API + webhooks signés"]:::ext
+    IA["Anthropic<br/>API Messages"]:::ext
+    MAIL["Service d’e-mail<br/>Swoosh, boîte locale en dev"]:::ext
+    CLAM["ClamAV clamd<br/>facultatif"]:::ext
+    RUST["Moteur Rust ml_sim<br/>processus local, facultatif"]:::ext
+  end
+
+  NAV -->|"HTTPS + WebSocket"| AUTH
+  NAV -->|"HTTPS"| OFFC
+  COOK -.->|"jeton de session"| AUTH
+  NAV -.- SW
+  NAV -.- IDB
+  AUTH --> APIC
+  OFFC --> APIC
+  APIC -->|"HTTP + jeton HMAC"| ACC & LRN & BIL & SOC & MUL & COM & STU & NOT
+  ACC --> D1 & F1
+  LRN --> D2
+  BIL --> D3
+  SOC --> D4 & F2
+  MUL --> D5
+  COM --> D6
+  STU --> D7 & F3
+  NOT --> D8
+  T3 -.->|"les 8 services publient"| PS
+  AUTH -.->|"s’abonne à « user:‹id› »"| PS
+  PRES -.->|"« members:online »"| PS
+  BIL <-->|"API, POST /webhooks/stripe"| STRIPE
+  STU -->|"si ANTHROPIC_API_KEY"| IA
+  ACC -->|"envoi des e-mails"| MAIL
+  SOC -->|"si CLAMD_HOST"| CLAM
+  LRN -->|"Port, si construit"| RUST

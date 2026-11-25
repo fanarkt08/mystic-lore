@@ -1,0 +1,63 @@
+%% Cas d'utilisation — écran 8 « Amis et messages » (+ centre de notifications).
+%% Notation UML : acteurs, limite du système, cas en ellipses, «include» (toujours exécuté), «extend» (facultatif, à une condition).
+%% @titre Cas d’utilisation — Amis, messages et notifications (écran 8)
+%% @legende Chaque cas correspond à une action réelle de l’interface (LiveView /friends, /messages, /notifications, /settings/privacy) et à une route de social ou du centre de notifications (références ci-dessous).
+%% @legende L’antivirus est facultatif : sans CLAMD_HOST, la pièce jointe est acceptée et affichée « non analysée » ; configuré mais injoignable, elle est refusée (503).
+%% @legende La permission de contact (demande d’ami, ajout à un groupe, invitation de salon) est décidée par social à chaque demande (MlSocial.Settings.can_contact/3).
+%% @ref Ami src/web/lib/web_web/social.ex:11-12 | @actions ~w(add accept decline cancel remove block unblock)
+%% @ref Rechercher src/web/lib/web_web/live/friends_live.ex:29 | def handle_event("search", %{"q" => q}
+%% @ref Envoyer src/web/lib/web_web/live/messages_live.ex:282 | def handle_event("send", %{"message" => params}
+%% @ref Groupe src/web/lib/web_web/live/messages_live.ex:373-422 | def handle_event("create_group", %{"group" => params}
+%% @ref Sourdine src/web/lib/web_web/live/messages_live.ex:356 | def handle_event("mute", %{"mute" => %{"duration" => duration}}
+%% @ref Signaler src/web/lib/web_web/live/messages_live.ex:338-344 | def handle_event("submit_report", %{"report" => params}
+%% @ref Permission src/social/lib/social/settings.ex:53 | def can_contact(from, to, kind) when kind in @kinds do
+%% @ref Antivirus src/social/config/runtime.exs:30 | if host = env.("CLAMD_HOST") do
+%% @ref Notifications src/web/lib/web_web/live/notifications_live.ex:77-84 | def handle_event("read_all", _params
+%% @ref Confidentialité src/web/lib/web_web/live/settings_live.ex:393-400 | def handle_event("save_contact_permissions", %{"contacts" => params}
+usecase-beta
+  direction LR
+  actor Membre
+  actor ClamAV(Antivirus ClamAV — facultatif) <<système externe>>
+  actor Courriel(Service d’e-mail) <<système externe>>
+  systemBoundary sys(MysticLore — amis, messages, notifications)
+    RECH(Rechercher un membre)
+    DEM(Demander en ami)
+    PERM(Vérifier la permission de contact)
+    REP(Accepter ou refuser une demande)
+    BLOQ(Bloquer ou débloquer un membre)
+    CONV(Ouvrir une conversation avec un ami)
+    ENV(Envoyer un message)
+    PJ(Joindre une image ou un PDF)
+    SCAN(Analyser le fichier par l’antivirus)
+    GRP(Créer un groupe de 3 à 20 membres)
+    GERE(Gérer son groupe : renommer, ajouter, retirer)
+    QUIT(Quitter un groupe)
+    MUTE(Mettre une conversation en sourdine)
+    SIG(Signaler un message ou un membre)
+    NOTIF(Consulter ses notifications)
+    EMAIL(Être prévenu par e-mail si le canal est activé)
+    CONF(Régler sa confidentialité et ses notifications)
+  end
+  Membre -- RECH
+  Membre -- DEM
+  Membre -- REP
+  Membre -- BLOQ
+  Membre -- CONV
+  Membre -- ENV
+  Membre -- GRP
+  Membre -- GERE
+  Membre -- QUIT
+  Membre -- MUTE
+  Membre -- SIG
+  Membre -- NOTIF
+  Membre -- CONF
+  DEM ..>:include PERM
+  GRP ..>:include PERM
+  GERE ..>:include PERM
+  PJ ..>:extend ENV
+  PJ ..>:include SCAN
+  SCAN -- ClamAV
+  Membre -- EMAIL
+  EMAIL -- Courriel
+  note for GERE réservé au propriétaire du groupe
+  note for SCAN seulement si CLAMD_HOST est configuré

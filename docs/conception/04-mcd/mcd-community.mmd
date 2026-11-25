@@ -1,0 +1,67 @@
+%% MCD (Merise) — domaine community (base ml_community). Écrit à la main à partir du MPD relevé.
+%% @titre MCD — domaine community : forum, réponses, votes, suivis, signalements et modération (notation Merise)
+%% @legende Trait plein : clé étrangère réelle (discussions → categories et → replies pour la solution, replies → discussions, follows → discussions). Pointillés : MEMBRE d’une autre base (accounts.users), ou cible polymorphe sans clé étrangère (target_type + target_id d’un vote, d’un signalement ou d’une entrée de modération).
+%% @legende VOTER correspond à UNE table votes (clé primaire user_id, target_type, target_id) : un vote « utile » par membre et par cible ; elle est dessinée en deux associations selon le type de cible. Un seul signalement OUVERT par (rapporteur, cible) (index unique partiel) ; le signalement garde un instantané (snapshot) du contenu.
+%% @legende CATÉGORIE est identifiée par son slug (données de référence de la migration). Simplification : inserted_at / updated_at omis.
+%% @ref MPD docs/conception/05-mpd/mpd-community.mmd:1 | FICHIER GÉNÉRÉ
+%% @ref Sans-FK src/community/priv/repo/migrations/20261123154244_create_community.exs:4 | Les membres vivent dans la base d'accounts : leurs UUID sont stockés ici sans clé étrangère.
+%% @ref Vote src/community/priv/repo/migrations/20261123154244_create_community.exs:86-92 | Un vote « utile » par (membre, cible) : la clé primaire est la contrainte d'unicité.
+%% @ref Signalement src/community/priv/repo/migrations/20261123154244_create_community.exs:134-138 | Un seul signalement ouvert par (rapporteur, cible).
+flowchart LR
+  classDef entite fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef association fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef externe fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray:6 4,color:#374151
+
+  MEMBRE["<b>MEMBRE</b><br/><i>accounts.users — autre base</i><br/><u>id</u>"]:::externe
+  CAT["<b>CATÉGORIE</b><br/><i>categories</i><br/><u>slug</u><br/>name<br/>description<br/>position<br/>staff_only"]:::entite
+  DISC["<b>DISCUSSION</b><br/><i>discussions</i><br/><u>id</u><br/>title<br/>slug<br/>body<br/>status<br/>pinned<br/>locked<br/>helpful_count<br/>moderation_reason<br/>edited_at<br/>last_activity_at"]:::entite
+  REP["<b>RÉPONSE</b><br/><i>replies</i><br/><u>id</u><br/>body<br/>status<br/>helpful_count<br/>moderation_reason<br/>edited_at"]:::entite
+  SIG["<b>SIGNALEMENT</b><br/><i>reports</i><br/><u>id</u><br/>target_type<br/>reason<br/>details<br/>snapshot<br/>status<br/>resolution<br/>resolution_reason<br/>resolved_at"]:::entite
+  MOD["<b>ENTRÉE DE MODÉRATION</b><br/><i>moderation_log</i><br/><u>id</u><br/>action<br/>target_type<br/>reason<br/>metadata"]:::entite
+
+  CLASSER(["classer"]):::association
+  OUVRIR(["ouvrir"]):::association
+  REPONDRE(["répondre à"]):::association
+  ECRIRE(["écrire"]):::association
+  SOLUTION(["avoir pour solution"]):::association
+  SUIVRE(["SUIVRE"]):::association
+  VOTERD(["VOTER pour une discussion"]):::association
+  VOTERR(["VOTER pour une réponse"]):::association
+  SIGNALER(["signaler"]):::association
+  VISERD(["viser"]):::association
+  VISERR(["viser"]):::association
+  RESOUDRE(["résoudre"]):::association
+  MODERER(["modérer"]):::association
+  PORTERD(["porter sur"]):::association
+  PORTERR(["porter sur"]):::association
+
+  CAT ---|"0,n"| CLASSER
+  CLASSER ---|"1,1"| DISC
+  MEMBRE -.-|"0,n"| OUVRIR
+  OUVRIR -.-|"1,1"| DISC
+  DISC ---|"0,n"| REPONDRE
+  REPONDRE ---|"1,1"| REP
+  MEMBRE -.-|"0,n"| ECRIRE
+  ECRIRE -.-|"1,1"| REP
+  DISC ---|"0,1"| SOLUTION
+  SOLUTION ---|"0,n"| REP
+  MEMBRE -.-|"0,n"| SUIVRE
+  SUIVRE ---|"0,n"| DISC
+  MEMBRE -.-|"0,n"| VOTERD
+  VOTERD -.-|"0,n"| DISC
+  MEMBRE -.-|"0,n"| VOTERR
+  VOTERR -.-|"0,n"| REP
+  MEMBRE -.-|"0,n"| SIGNALER
+  SIGNALER -.-|"1,1"| SIG
+  DISC -.-|"0,n"| VISERD
+  VISERD -.-|"0,1"| SIG
+  REP -.-|"0,n"| VISERR
+  VISERR -.-|"0,1"| SIG
+  MEMBRE -.-|"0,n"| RESOUDRE
+  RESOUDRE -.-|"0,1"| SIG
+  MEMBRE -.-|"0,n"| MODERER
+  MODERER -.-|"1,1"| MOD
+  DISC -.-|"0,n"| PORTERD
+  PORTERD -.-|"0,1"| MOD
+  REP -.-|"0,n"| PORTERR
+  PORTERR -.-|"0,1"| MOD

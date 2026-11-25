@@ -1,0 +1,119 @@
+%% Séquence b : abonnement (checkout), webhook signé, mise à jour des droits, événement PubSub, mise à jour en direct.
+%% Chaque « %% @ref » est contrôlé par e2e/tools/conception.mjs verifier (le texte doit figurer dans ces lignes).
+%% @titre Séquence b — Abonnement : checkout, webhook signé (Stripe ou simulé local), droits, PubSub et mise à jour en direct
+%% @legende Règle : une URL de retour n'active jamais rien. Seuls les événements signés modifient les droits, par UN seul pipeline (MlBilling.Webhooks.handle/3) : en mode local, billing signe lui-même 3 événements au format Stripe (checkout.session.completed, customer.subscription.created, invoice.paid) avec un secret local dérivé d'INTERNAL_SECRET.
+%% @legende Le pipeline (9 à 14) tourne une fois par événement. Seul customer.subscription.created change l'abonnement en mode local : c'est lui qui insère la notification et déclenche la diffusion (15 à 18).
+%% @legende Mode Stripe : non testé avec l'API réelle dans ce projet (stubs Req.Test et webhooks signés seulement) ; le schéma suit le code. L'ordre entre la redirection de Stripe et ses webhooks n'est pas garanti : la page de retour attend alors l'événement (« Check again »).
+%% @legende Simplifications : les refus de validation (422), l'abonnement déjà actif (409 already_subscribed), le paiement simulé échoué (invoice.payment_failed, rien n'est accordé) et le traitement d'une facture ne sont pas détaillés.
+%% @ref 1 src/web/lib/web_web/live/membership_live.ex:54 | def handle_event("checkout", %{"plan" => plan}, socket) when plan in ["premium", "vip"] do
+%% @ref 2 src/web/lib/web_web/live/membership_live.ex:63 | Api.post(socket, :billing, "/api/checkout", json: body)
+%% @ref 2 src/billing/lib/billing_web/router.ex:48 | post "/checkout", CheckoutController, :create
+%% @ref 2 src/billing/lib/billing_web/controllers/checkout_controller.ex:7-9 | MlBilling.create_checkout(conn.assigns.user_id, conn.body_params)
+%% @ref 3 src/billing/lib/billing.ex:108-122 | :ok <- not_subscribed(user_id, attrs.plan),
+%% @ref 4 src/billing/lib/billing.ex:140-144 | {:ok, %{url: "/membership/local-checkout/" <> id, session_id: id, mode: "local"}}
+%% @ref 4 src/billing/lib/billing.ex:175-184 | Repo.insert!(%CheckoutSession{
+%% @ref 4b src/billing/lib/billing.ex:146-168 | Stripe.create_checkout_session(form, id)
+%% @ref 5 src/web/lib/web_web/live/membership_live.ex:64 | {:ok, %{"url" => url}} when is_binary(url) -> {:noreply, go(socket, url)}
+%% @ref 6 src/web/lib/web_web/live/local_checkout_live.ex:35-41 | "/api/checkout/:id/simulate-payment"
+%% @ref 6 src/billing/lib/billing_web/router.ex:50 | post "/checkout/:id/simulate-payment", CheckoutController, :simulate
+%% @ref 7 src/billing/lib/billing.ex:206-215 | {"open", _} -> Local.simulate_payment(session, outcome)
+%% @ref 8 src/billing/lib/billing/local.ex:39-49 | "customer.subscription.created"
+%% @ref 8 src/billing/lib/billing/local.ex:96-110 | Webhooks.handle("local", raw, Signature.header(raw, secret(), created))
+%% @ref 8b src/billing/lib/billing_web/router.ex:21 | post "/webhooks/stripe", WebhookController, :stripe
+%% @ref 8b src/billing/lib/billing_web/body_reader.ex:4-7 | Plug.Conn.assign(conn, :raw_body, body)
+%% @ref 8b src/billing/lib/billing_web/controllers/webhook_controller.ex:6-9 | MlBilling.Webhooks.handle("stripe", conn.assigns[:raw_body] || "", signature)
+%% @ref 9 src/billing/lib/billing/webhooks.ex:16-17 | MlBilling.Signature.verify(raw_body, signature_header, secret(provider))
+%% @ref 9 src/billing/lib/billing/signature.ex:8-21 | Plug.Crypto.secure_compare(&1, expected)
+%% @ref 9 src/billing/lib/billing_web/controllers/webhook_controller.ex:15-18 | json(%{error: "invalid_signature"})
+%% @ref 10 src/billing/lib/billing/webhooks.ex:40-44 | {:ok, {"duplicate", nil}}
+%% @ref 10 src/billing/lib/billing/webhooks.ex:61-80 | conflict_target: [:provider, :provider_event_id]
+%% @ref 11 src/billing/lib/billing/webhooks.ex:97-109 | apply_subscription(lock_subscription(user_id, provider), provider, attrs, event)
+%% @ref 11 src/billing/lib/billing/webhooks.ex:238-251 | lock: "FOR UPDATE"
+%% @ref 12 src/billing/lib/billing/webhooks.ex:149-159 | updated = put_subscription(sub, provider, attrs, event)
+%% @ref 13 src/billing/lib/billing/webhooks.ex:160 | :ok = MlBilling.Notices.transition!(sub, updated)
+%% @ref 13 src/billing/lib/billing/notices.ex:8-19 | |> Oban.insert!()
+%% @ref 14 src/billing/lib/billing/webhooks.ex:48-50 | Repo.update_all(set: [status: status, user_id: user_id, error: error])
+%% @ref 15 src/billing/lib/billing/webhooks.ex:55-57 | if changed, do: MlBilling.broadcast(changed)
+%% @ref 15 src/billing/lib/billing.ex:86-90 | MlShared.Events.broadcast("entitlements", message)
+%% @ref 15 src/billing/lib/billing/credits.ex:139-143 | def sync_plan(user_id, now \\ DateTime.utc_now()) do
+%% @ref 16 src/learning/lib/learning/entitlements.ex:59-69 | :ets.delete(@table, user_id)
+%% @ref 17 src/web/lib/web_web/auth.ex:177-184 | MlShared.Events.subscribe(MlShared.Events.user(user["id"]))
+%% @ref 17 src/web/lib/web_web/auth.ex:286-288 | socket |> MysticWeb.Preferences.refresh(plan) |> purge_offline(plan)
+%% @ref 18 src/web/lib/web_web/live/membership_live.ex:44-46 | {:noreply, socket |> load_billing() |> load_credits()}
+%% @ref 19 src/billing/lib/billing_web/controllers/checkout_controller.ex:22-26 | put_status(202) |> json(%{status: "processing"})
+%% @ref 19 src/web/lib/web_web/live/local_checkout_live.ex:46-47 | push_navigate(socket, to: ~p"/membership/success?#{[session_id: id]}")
+%% @ref 20 src/web/lib/web_web/live/checkout_result_live.ex:34-50 | defp state(%{"status" => "completed"}, %{"plan" => plan}) when plan != "free", do: :active
+%% @ref 21 src/billing/lib/billing/notify_worker.ex:3-7 | MlShared.Notifications.deliver(notification)
+%% @ref 21 src/shared/lib/ml_shared/notifications.ex:12-14 | Client.post("/api/internal/notifications", json: notification)
+sequenceDiagram
+  actor U as Membre
+  participant N as Navigateur
+  participant W as web (BFF :4000)
+  box service billing (:4003)
+    participant B as billing
+    participant DB as ml_billing (PostgreSQL)
+  end
+  participant S as Stripe (externe)
+  participant P as PubSub du cluster
+  participant L as learning
+  participant C as notifications
+
+  U->>N: choisit Premium ou VIP sur /membership
+  N->>+W: 1 · événement LiveView « checkout » (plan)
+  W->>+B: 2 · POST /api/checkout {plan, success_url, cancel_url} (jeton interne du membre)
+  B->>B: 3 · mode (stripe | local | disabled), validation, déjà abonné à cette formule ?
+  alt mode local (par défaut, sans compte Stripe)
+    B->>DB: 4 · INSERT checkout_sessions (provider local, expire dans 1 h)
+  else mode Stripe (clés de test)
+    B->>S: 4b · POST /v1/checkout/sessions (mode subscription, metadata user_id et plan)
+    S-->>B: {id, url}
+    B->>DB: INSERT checkout_sessions (provider stripe)
+  end
+  B-->>-W: 201 {url, session_id, mode}
+  W-->>-N: 5 · navigation vers l’URL de paiement
+
+  alt mode local
+    U->>N: « Pay » (paiement simulé)
+    N->>+W: 6 · événement « simulate » {outcome: succeeded}
+    W->>+B: POST /api/checkout/‹id›/simulate-payment
+    B->>B: 7 · session ouverte, appartenant au membre, mode local
+    B->>B: 8 · Local.simulate_payment : 3 événements au format Stripe, signés HMAC-SHA256 → Webhooks.handle("local")
+  else mode Stripe
+    N->>S: paiement sur la page Stripe Checkout
+    S->>B: 8b · POST /webhooks/stripe, en-tête Stripe-Signature (corps brut gardé par BodyReader)
+  end
+
+  loop chaque événement, même pipeline : MlBilling.Webhooks.handle/3
+    B->>B: 9 · Signature.verify : HMAC-SHA256 comparé en temps constant, horodatage à 300 s près
+    B->>DB: 10 · BEGIN — INSERT webhook_events … ON CONFLICT (provider, provider_event_id) DO NOTHING
+    B->>DB: 11 · customer.subscription.* : ligne d’abonnement verrouillée (SELECT … FOR UPDATE)
+    B->>DB: 12 · événement plus ancien que last_event_at → « stale », sinon UPDATE subscriptions
+    B->>DB: 13 · Notices.transition! : INSERT oban_jobs (NotifyWorker, subscription_activated)
+    B->>DB: 14 · UPDATE webhook_events SET status — COMMIT
+    opt l’abonnement a changé (après le COMMIT)
+      B->>DB: 15 · Credits.sync_plan : complément de crédits IA (top_up)
+      B->>P: {:entitlements_changed, user_id, plan} sur « entitlements » et « user:‹id› »
+      P-)L: 16 · Entitlements : :ets.delete (cache des droits de 30 s)
+      P-)W: 17 · chaque LiveView du membre : Auth.user_event → thème VIP, purge hors ligne si non payant
+      W->>B: 18 · MembershipLive recharge GET /api/me/billing et /api/me/credits
+    end
+  end
+  alt signature invalide ou expirée (mode Stripe)
+    B-->>S: 400 invalid_signature, rien n’est écrit
+  else événement déjà reçu
+    B-->>S: 200 {status: duplicate}, sans effet
+  end
+
+  alt mode local
+    B-->>-W: 19 · 202 {status: processing} (après le traitement des 3 événements)
+    W-->>-N: push_navigate /membership/success?session_id=‹id›
+  end
+  N->>+W: 20 · /membership/success : GET /api/checkout/‹id› et /api/me/billing (lecture seule)
+  W-->>-N: « Welcome to Premium » si session completed et formule payante, sinon attente
+
+  par tâche Oban (file notify, 10 essais), après le COMMIT
+    B->>+C: 21 · POST /api/internal/notifications (billing, subscription_activated)
+    C->>P: {:notifications_changed, user_id, toast} sur « user:‹id› »
+    C-->>-B: 201
+    P-)W: cloche et toast mis à jour en direct
+  end

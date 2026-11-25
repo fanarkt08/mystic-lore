@@ -1,0 +1,225 @@
+/* Studio : composants propres à l'éditeur (les classes de app.css d'abord). */
+@layer components {
+  /* steps Brief → Publish: a wrapping row of tabs, scrollable on small screens */
+  .studio-steps {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .studio-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 8px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+  .studio-step[aria-current="step"] {
+    border-color: var(--color-magic);
+    color: var(--color-ink);
+    background: var(--color-raised);
+  }
+  .studio-step-number {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--color-raised);
+    font-size: 0.8rem;
+  }
+  .studio-step[aria-current="step"] .studio-step-number {
+    background: var(--color-action);
+    color: var(--color-white);
+  }
+
+  .studio-saved {
+    min-height: 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .studio-project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .studio-lesson-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+  }
+
+  .studio-inline-form {
+    display: grid;
+    gap: 12px;
+    align-items: end;
+  }
+  @media (min-width: 640px) {
+    .studio-inline-form {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+    .studio-inline-form:has(> .field:only-of-type) {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+
+  .studio-lesson-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .studio-lesson-tab {
+    padding: 6px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+  .studio-lesson-tab[aria-current="page"] {
+    border-color: var(--color-info);
+    color: var(--color-ink);
+  }
+
+  .studio-choice {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+  .studio-choice input[type="radio"] {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--color-magic);
+  }
+
+  .studio-generation {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+  }
+  .studio-result {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .studio-demo-chip {
+    display: inline-block;
+    margin-inline-start: 4px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-reward) 15%, transparent);
+    color: var(--color-reward);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .studio-thumb {
+    width: 100%;
+    max-width: 320px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-line);
+    background: var(--color-raised);
+  }
+
+  .studio-check {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .studio-preview-lesson {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-left: 3px solid var(--color-magic);
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
+  }
+  .studio-code {
+    white-space: pre-wrap;
+    min-height: auto;
+  }
+
+  /* cost confirmation: a fixed panel over the page, full width on phones */
+  .studio-dialog {
+    position: fixed;
+    z-index: 60;
+    inset: auto 12px 12px 12px;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    box-shadow: var(--shadow-soft);
+    border-color: var(--color-magic);
+  }
+  @media (min-width: 768px) {
+    .studio-dialog {
+      inset: auto 32px 32px auto;
+      width: 28rem;
+    }
+  }
+  /* <dialog> modal (showModal) : styles de l'agent utilisateur neutralisés, fond de la page laissé visible */
+  dialog.studio-dialog {
+    margin: 0;
+    max-width: none;
+    color: var(--color-ink);
+  }
+  dialog.studio-dialog::backdrop {
+    background: transparent;
+  }
+
+  .studio-timeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    counter-reset: status;
+  }
+  .studio-timeline li {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    color: var(--color-muted);
+    font-size: 0.875rem;
+  }
+  .studio-timeline li[aria-current="step"] {
+    border-color: var(--color-success);
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .studio-credits {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* formulaires des formats (bornes de simulation, sous-titres) */
+  .studio-grid-3,
+  .studio-grid-4 {
+    display: grid;
+    gap: 12px;
+  }
+  .studio-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (min-width: 768px) {
+    .studio-grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .studio-grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+}

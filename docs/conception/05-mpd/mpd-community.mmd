@@ -1,0 +1,97 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_community_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_community_dev (service community) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 1 migrations appliquées, dernière : 20261123154244) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_community_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • discussions — discussions_helpful_count : helpful_count >= 0
+%% @legende • discussions — discussions_status : status IN ('visible', 'hidden', 'removed', 'deleted')
+%% @legende • replies — replies_helpful_count : helpful_count >= 0
+%% @legende • replies — replies_status : status IN ('visible', 'hidden', 'removed', 'deleted')
+%% @legende • reports — reports_reason : reason IN ('harassment', 'spam', 'inappropriate', 'other')
+%% @legende • reports — reports_status : status IN ('open', 'resolved')
+%% @legende • reports — reports_target_type : target_type IN ('discussion', 'reply')
+%% @legende • votes — votes_target_type : target_type IN ('discussion', 'reply')
+%% @legende Index uniques partiels ou sur expression :
+%% @legende • reports — reports_one_open_index : UNIQUE (reporter_id, target_type, target_id) WHERE status = 'open'
+erDiagram
+  direction LR
+  categories {
+    varchar(255) slug PK
+    varchar(255) name "NN"
+    varchar(255) description "NN"
+    integer position "NN"
+    boolean staff_only "NN · déf. false"
+  }
+  discussions {
+    uuid id PK
+    varchar(255) category FK "NN · → categories.slug NO ACTION"
+    uuid author_id "NN · ⇢ accounts.users"
+    varchar(140) title "NN"
+    varchar(255) slug UK "NN"
+    text body "NN"
+    varchar(255) status "NN · déf. 'visible'"
+    boolean pinned "NN · déf. false"
+    boolean locked "NN · déf. false"
+    uuid solution_reply_id FK "→ replies.id SET NULL"
+    integer helpful_count "NN · déf. 0"
+    text moderation_reason
+    timestamp edited_at
+    timestamp last_activity_at "NN"
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  follows {
+    uuid user_id PK "⇢ accounts.users"
+    uuid discussion_id PK, FK "→ discussions.id CASCADE"
+    timestamp inserted_at "NN"
+  }
+  moderation_log {
+    uuid id PK
+    uuid moderator_id "NN · ⇢ accounts.users"
+    varchar(255) action "NN"
+    varchar(255) target_type "NN"
+    uuid target_id "NN · ⇢ discussions ou replies selon target_type"
+    text reason
+    jsonb metadata "NN · déf. '{}'"
+    timestamp inserted_at "NN"
+  }
+  replies {
+    uuid id PK
+    uuid discussion_id FK "NN · → discussions.id CASCADE"
+    uuid author_id "NN · ⇢ accounts.users"
+    text body "NN"
+    varchar(255) status "NN · déf. 'visible'"
+    integer helpful_count "NN · déf. 0"
+    text moderation_reason
+    timestamp edited_at
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  reports {
+    uuid id PK
+    uuid reporter_id "NN · UQ partiel (reporter_id, target_type, target_id) WHERE status = 'open' · ⇢ accounts.users"
+    varchar(255) target_type "NN · UQ partiel (reporter_id, target_type, target_id) WHERE status = 'open'"
+    uuid target_id "NN · UQ partiel (reporter_id, target_type, target_id) WHERE status = 'open' · ⇢ discussions ou replies selon target_type"
+    varchar(255) reason "NN"
+    text details
+    jsonb snapshot "NN"
+    varchar(255) status "NN · déf. 'open'"
+    varchar(255) resolution
+    text resolution_reason
+    uuid resolved_by "⇢ accounts.users"
+    timestamp resolved_at
+    timestamp inserted_at "NN"
+  }
+  votes {
+    uuid user_id PK "⇢ accounts.users"
+    varchar(255) target_type PK
+    uuid target_id PK "⇢ discussions ou replies selon target_type"
+    timestamp inserted_at "NN"
+  }
+  categories ||..o{ discussions : "category"
+  replies |o..o{ discussions : "solution_reply_id"
+  discussions ||--o{ follows : "discussion_id"
+  discussions ||..o{ replies : "discussion_id"

@@ -1,0 +1,160 @@
+/* Badges et quêtes. Médaillons décoratifs : le nom, la rareté et le statut d'un badge sont toujours écrits
+   à côté. */
+@layer components {
+  .badge-medal {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid color-mix(in srgb, var(--color-magic) 55%, transparent);
+    border-radius: 999px;
+    background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--color-magic) 40%, transparent), color-mix(in srgb, var(--color-action) 14%, transparent) 70%);
+    color: var(--color-ink);
+  }
+  .badge-medal-sm {
+    width: 36px;
+    height: 36px;
+  }
+  .badge-medal-lg {
+    width: 64px;
+    height: 64px;
+  }
+  .badge-rarity-uncommon {
+    border-color: color-mix(in srgb, var(--color-info) 60%, transparent);
+    background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--color-info) 35%, transparent), color-mix(in srgb, var(--color-info) 8%, transparent) 70%);
+  }
+  .badge-rarity-rare {
+    border-color: var(--color-magic);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-magic) 15%, transparent);
+  }
+  .badge-rarity-epic,
+  .badge-rarity-legendary {
+    border-color: color-mix(in srgb, var(--color-reward) 85%, transparent);
+    background: radial-gradient(circle at 30% 30%, #f8e6bf, var(--color-reward) 60%, #c9a35a);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-reward) 15%, transparent);
+    color: var(--color-canvas);
+  }
+  .badge-medal-locked {
+    border-style: dashed;
+    border-color: var(--color-line);
+    background: var(--color-raised);
+    box-shadow: none;
+    color: var(--color-muted);
+  }
+
+  .tag-rarity-uncommon {
+    border-color: color-mix(in srgb, var(--color-info) 40%, transparent);
+    color: var(--color-info);
+  }
+  .tag-rarity-rare {
+    border-color: color-mix(in srgb, var(--color-magic) 50%, transparent);
+    color: var(--color-magic);
+  }
+  .tag-rarity-epic,
+  .tag-rarity-legendary {
+    border-color: color-mix(in srgb, var(--color-reward) 45%, transparent);
+    background: color-mix(in srgb, var(--color-reward) 8%, transparent);
+    color: var(--color-reward);
+  }
+
+  /* emplacements équipés : empilés sur mobile, 3 colonnes dès 768 px */
+  .equip-slots {
+    display: grid;
+    gap: 16px;
+  }
+  @media (min-width: 768px) {
+    .equip-slots {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .equip-slot {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-magic) 45%, transparent);
+    border-radius: var(--radius-card);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--color-action) 12%, transparent), var(--color-surface) 60%);
+  }
+  .equip-slot-empty {
+    border-style: dashed;
+    border-color: var(--color-line);
+    background: transparent;
+  }
+  .equip-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+  }
+  .equip-status {
+    display: flex;
+    min-height: 24px;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-ink);
+  }
+
+  .achievement-grid {
+    display: grid;
+    gap: 16px;
+  }
+  @media (min-width: 640px) {
+    .achievement-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1280px) {
+    .achievement-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .achievement {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .achievement-earned {
+    border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+  }
+
+  .quest {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .quest-icon {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-control);
+    background: color-mix(in srgb, var(--color-action) 16%, transparent);
+    color: var(--color-magic);
+  }
+  .quest-icon-done {
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    color: var(--color-success);
+  }
+
+  .equipped-list {
+    display: grid;
+    gap: 12px;
+  }
+  .equipped-item {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+  }
+}

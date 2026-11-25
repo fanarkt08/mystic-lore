@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Lance les macroservices en local, reliés en cluster Erlang (PubSub partagé pour le temps réel).
+#   bin/dev                      → tous les services
+#   bin/dev accounts web         → seulement ceux-là (les autres restent tels quels)
+# Logs : tmp/log/<service>.log ; arrêt : bin/stop [services…]
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+HOST="$(hostname -s)"
+COOKIE="${ERL_COOKIE:-mysticlore-dev-cookie}"
+ALL="accounts learning billing social multiplayer community studio notifications web"
+SERVICES="${*:-$ALL}"
+export DB_USER="${DB_USER:-$(whoami)}" DB_PASSWORD="${DB_PASSWORD:-}"
+export CLUSTER_NODES="$(for s in $ALL; do printf "%s@%s," "$s" "$HOST"; done | sed 's/,$//')"
+[ -f "$ROOT/.env" ] && set -a && . "$ROOT/.env" && set +a
+mkdir -p "$ROOT/tmp/log" "$ROOT/tmp/pids"
+port() { case "$1" in web) echo 4000;; accounts) echo 4001;; learning) echo 4002;; billing) echo 4003;; social) echo 4004;; multiplayer) echo 4005;; community) echo 4006;; studio) echo 4007;; notifications) echo 4008;; esac; }
+for s in $SERVICES; do
+  if [ -f "$ROOT/tmp/pids/$s" ] && kill -0 "$(cat "$ROOT/tmp/pids/$s")" 2>/dev/null; then echo "$s déjà lancé"; continue; fi
+  # tout le job est redirigé (le script ne garde aucun descripteur ouvert) et `exec` : le PID enregistré est celui du nœud
+  (cd "$ROOT/src/$s" && exec nohup elixir --sname "$s" --cookie "$COOKIE" -S mix phx.server) > "$ROOT/tmp/log/$s.log" 2>&1 < /dev/null &
+  echo $! > "$ROOT/tmp/pids/$s"
+  echo "→ $s (log: tmp/log/$s.log)"
+done
+echo "Attente des services…"
+for s in $SERVICES; do
+  p=$(port "$s")
+  for _ in $(seq 1 90); do curl -sf "http://localhost:$p/healthz" >/dev/null && break; sleep 1; done
+  curl -sf "http://localhost:$p/healthz" >/dev/null && echo "  $s :$p OK" || echo "  $s :$p NE RÉPOND PAS (voir tmp/log/$s.log)"
+done
+echo "MysticLore : http://localhost:4000   ·   e-mails de dev : http://localhost:4001/dev/mailbox"

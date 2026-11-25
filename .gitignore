@@ -1,0 +1,24 @@
+.env
+tmp/
+.archive/
+src/*/_build/
+src/*/deps/
+src/web/priv/static/assets/
+e2e/node_modules/
+e2e/shots/
+*.ez
+erl_crash.dump
+src/web__*/
+# notes personnelles (révision de soutenance), hors dépôt
+perso/
+# fichiers générés (outillage qualité, couverture, moteur natif compilé, fichiers téléversés en dev)
+tools/quality/_build/
+tools/quality/deps/
+src/*/cover/
+src/*/priv/storage/
+src/learning/priv/native/
+src/learning/native/sim_engine/target/
+.elixir_ls/
+.DS_Store
+# captures produites par les scripts e2e
+e2e/*.png

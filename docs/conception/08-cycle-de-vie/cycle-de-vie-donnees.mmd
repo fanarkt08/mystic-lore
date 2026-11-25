@@ -1,0 +1,77 @@
+%% Cycle de vie des données personnelles : collecte, stockage, traitements, export, suppression et durées de conservation.
+%% Sources : pages juridiques (src/web/lib/web_web/legal.ex, live/legal_live.ex), docs/account-deletion.md, contrats privacy, notifications, support, offline.
+%% @titre Cycle de vie des données personnelles : collecte, stockage, traitements, export, suppression et durées de conservation
+%% @legende Durées telles que codées dans cette version et affichées par la page /legal/privacy (textes PROVISOIRES, à faire valider par un juriste). Restent « à compléter par l’exploitant » : durée des journaux du serveur, durée du journal d’audit (aucune suppression automatique), fournisseur d’e-mail, hébergeur, bases légales.
+%% @legende Suppression d’un compte : rien n’est effacé pendant le délai de grâce ; à l’échéance, accounts exécute les étapes dans l’ordre, chacune idempotente, enregistrée dans deletion_steps et jamais rejouée ; une étape en échec (service ou Stripe injoignable) est relancée plus tard. Le compte n’est anonymisé qu’après les 7 étapes.
+%% @legende Copies hors ligne : dans le navigateur du membre, hors de portée des serveurs ; un appareil qui ne se reconnecte pas garde ses copies jusqu’à leur expiration. Les données des journaux techniques d’Oban (tâches terminées) sont purgées après 7 jours.
+%% @ref Cookies src/web/lib/web_web/legal.ex:59-68 | duration: gettext("30 days at most; ends when you log out"),
+%% @ref Locale src/web/lib/web_web/legal.ex:78 | duration: gettext("1 year"),
+%% @ref Rétention src/web/lib/web_web/live/legal_live.ex:367-379 | Sessions: 30 days without use.
+%% @ref Notifications src/web/lib/web_web/live/legal_live.ex:438 | 90 days, 500 per member at most; erased when the account is deleted.
+%% @ref Hors-ligne src/web/lib/web_web/live/legal_live.ex:448 | days at most per copy and never after the end of your paid period
+%% @ref Journaux src/web/lib/web_web/live/legal_live.ex:177-183 | The audit log of staff actions has no automatic deletion in this version:
+%% @ref Grâce src/accounts/config/runtime.exs:18 | ACCOUNT_DELETION_GRACE_DAYS
+%% @ref Export src/accounts/lib/accounts/privacy.ex:52 | @export_hours 24
+%% @ref Ordre docs/account-deletion.md:12-14 | multiplayer → studio → community → social → billing → learning → notifications
+%% @ref Conservé docs/account-deletion.md:20 | **factures** (montant, devise, période, identifiants du fournisseur) et **registre de crédits IA**
+%% @ref Support docs/contracts/support.md:62-64 | demandes closes depuis plus de
+%% @ref Purges docs/contracts/notifications.md:151-154 | occurrences traitées de plus de 30 jours, marques de lecture de plus de 7 jours
+%% @ref Balayage src/accounts/config/config.exs:22-25 | {"*/5 * * * *", MlAccounts.Privacy.SweepWorker},
+%% @ref Oban src/accounts/config/config.exs:28 | pruner: [max_age: {7, :days}],
+flowchart LR
+  classDef etape fill:#f2f3f5,stroke:#374151,stroke-width:1.5px,color:#111111
+  classDef duree fill:#fff7d6,stroke:#a8a29e,stroke-width:1px,color:#111111
+  classDef fin fill:#ffffff,stroke:#374151,stroke-width:1.5px,color:#111111
+
+  subgraph C["1 · Collecte"]
+    C1["<b>Compte</b> : e-mail, pseudonyme, nom affiché,<br/>mot de passe → hachage bcrypt"]:::etape
+    C2["<b>Profil et préférences</b> : bio, pronoms, centres<br/>d’intérêt, avatar sans métadonnées, langue, fuseau"]:::etape
+    C3["<b>Sécurité</b> : sessions — appareil tronqué,<br/>IP anonymisée /24 ou /48 — secret 2FA chiffré"]:::etape
+    C4["<b>Activité</b> : progression, notes, XP, badges, messages,<br/>pièces jointes, forum, salons, projets du studio"]:::etape
+    C5["<b>Paiement</b> : formule, factures, crédits IA —<br/>aucune donnée de carte, gérée par Stripe"]:::etape
+    C6["<b>Support</b> : demande d’un membre ou d’un visiteur<br/>(adresse saisie), réponses du staff"]:::etape
+  end
+
+  subgraph S["2 · Stockage"]
+    S1[("8 bases PostgreSQL,<br/>une par service")]:::etape
+    S2[/"Fichiers privés : avatars, pièces jointes,<br/>images et médias du studio"/]:::etape
+    S3["Navigateur : cookie de session _mystic_web,<br/>cookie ml_locale, IndexedDB hors ligne"]:::etape
+  end
+
+  subgraph T["3 · Traitements et destinataires"]
+    T1["Services MysticLore : apprentissage, social,<br/>forum, multijoueur, studio, notifications"]:::etape
+    T2["Sous-traitants selon la configuration : Stripe,<br/>Anthropic — contexte du projet seulement<br/>avec consentement —, e-mail, ClamAV, hébergeur"]:::etape
+    T3["Modération : signalements, sanctions, appels,<br/>journal d’audit en ajout seul"]:::etape
+  end
+
+  subgraph R["4 · Durées de conservation (purges automatiques)"]
+    R1["Sessions : 30 jours sans usage<br/>Cookie de session : 30 jours au plus — ml_locale : 1 an"]:::duree
+    R2["Liens par e-mail : confirmation 7 jours,<br/>mot de passe 1 heure, nouvel e-mail 24 heures<br/>Challenge 2FA : 5 minutes"]:::duree
+    R3["Notifications : 90 jours, 500 par membre<br/>occurrences 30 j, marques de lecture 7 j,<br/>journal des e-mails 2 j, e-mails reportés 7 j"]:::duree
+    R4["Support : 180 jours après la clôture,<br/>365 jours au plus sans activité"]:::duree
+    R5["Copies hors ligne : 14 jours au plus,<br/>jamais après la fin de la période payée"]:::duree
+    R6["Le reste : jusqu’à la suppression du compte<br/>Journal d’audit et journaux du serveur : à définir"]:::duree
+  end
+
+  subgraph E["5 · Export (droit d’accès et portabilité)"]
+    E1["Demande avec le mot de passe<br/>3 par 24 heures"]:::etape
+    E2["ExportWorker (Oban) : section accounts<br/>+ GET …/export des 7 autres services"]:::etape
+    E3["Document JSON téléchargeable 24 heures,<br/>puis purgé (balayage toutes les 5 min)"]:::etape
+  end
+
+  subgraph D["6 · Suppression du compte"]
+    D1["<b>Demande</b> : mot de passe + pseudonyme<br/>sessions révoquées, e-mail avec la date<br/>et le moyen d’annuler"]:::etape
+    D2["Délai de grâce : 30 jours<br/>(ACCOUNT_DELETION_GRACE_DAYS), annulable"]:::etape
+    D3["Échéance : SweepWorker toutes les 5 min →<br/>DeletionWorker : multiplayer → studio → community<br/>→ social → billing → learning → notifications"]:::etape
+    D4["accounts : anonymisation « Deleted member »<br/>(e-mail, pseudonyme, profil, secrets, sessions,<br/>exports et demandes de support effacés)"]:::fin
+    D5["Conservé sans donnée personnelle : factures et<br/>registre de crédits (obligation comptable), signalements<br/>et journaux de modération, contributions visibles<br/>(messages, forum, salons) signées « Deleted member »"]:::fin
+  end
+
+  C --> S
+  S --> T
+  S --> R
+  S --> E
+  E1 --> E2 --> E3
+  S --> D
+  D1 --> D2 --> D3 --> D4
+  D3 --> D5

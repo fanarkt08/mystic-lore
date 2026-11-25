@@ -1,0 +1,495 @@
+/* États d'accès (liens expirés, accès terminé), bandeau de connexion, pages juridiques, aide, contact, accueil
+   guidé, file du support et compléments de la page d'accueil. Aucune règle en ligne (CSP), cibles ≥ 44 px. */
+@layer components {
+  /* ---------- état d'accès (MysticWeb.AccessComponents) ---------- */
+  .access-state {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .access-state-icon {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-reward) 16%, transparent);
+    color: var(--color-reward);
+  }
+  .access-state-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--color-ink);
+  }
+  .access-state-text {
+    color: var(--color-muted);
+  }
+  .access-state-warning {
+    border-color: color-mix(in srgb, var(--color-reward) 45%, var(--color-line));
+  }
+  .access-state-danger {
+    border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-line));
+  }
+  .access-state-danger .access-state-icon {
+    background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+    color: var(--color-danger);
+  }
+  .access-state-info .access-state-icon {
+    background: color-mix(in srgb, var(--color-info) 16%, transparent);
+    color: var(--color-info);
+  }
+  .access-state-reward {
+    background:
+      radial-gradient(500px 200px at 100% 0%, color-mix(in srgb, var(--color-reward) 10%, transparent), transparent 60%),
+      var(--color-surface);
+  }
+  @media (max-width: 479.98px) {
+    .access-state {
+      flex-direction: column;
+    }
+  }
+
+  /* ---------- bandeau de connexion (assets/js/connection.js) ---------- */
+  .connection-status {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    z-index: 70;
+    display: flex;
+    width: min(40rem, calc(100vw - 24px));
+    align-items: center;
+    gap: 12px;
+    padding: 8px 8px 8px 16px;
+    border: 1px solid color-mix(in srgb, var(--color-reward) 55%, var(--color-line));
+    border-radius: var(--radius-card);
+    background: var(--color-raised);
+    box-shadow: var(--shadow-soft);
+    color: var(--color-ink);
+    transform: translateX(-50%);
+  }
+  .connection-status .btn {
+    flex-shrink: 0;
+  }
+  @media (max-width: 479.98px) {
+    .connection-status {
+      flex-wrap: wrap;
+    }
+    .connection-status .btn {
+      width: 100%;
+    }
+  }
+  /* boutons désactivés faute de connexion : même apparence que tout bouton désactivé */
+  [data-ml-offline] {
+    cursor: not-allowed;
+  }
+
+  /* ---------- pages d'erreur : aide et contact ---------- */
+  .error-help {
+    display: grid;
+    gap: 4px;
+    padding-top: 8px;
+  }
+  .error-help .link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  /* ---------- liens d'aide (listes de liens, cibles de 44 px) ---------- */
+  .help-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    color: var(--color-magic);
+    font-weight: 500;
+  }
+  .help-link:hover {
+    text-decoration: underline;
+  }
+
+  /* ---------- rail des membres : aide et pages juridiques ---------- */
+  .rail-help {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* ---------- pages juridiques ---------- */
+  .legal-layout {
+    display: grid;
+    gap: 24px;
+  }
+  @media (min-width: 1024px) {
+    .legal-layout {
+      grid-template-columns: 14rem minmax(0, 1fr);
+      align-items: start;
+      gap: 32px;
+    }
+    .legal-aside {
+      position: sticky;
+      top: 32px;
+    }
+  }
+  .legal-article {
+    display: grid;
+    gap: 24px;
+    max-width: 52rem;
+  }
+  .legal-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  @media (min-width: 1024px) {
+    .legal-nav ul {
+      flex-direction: column;
+    }
+  }
+  .legal-nav-link {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    padding-inline: 12px;
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    font-weight: 500;
+  }
+  .legal-nav-link:hover,
+  .legal-nav-link[aria-current="page"] {
+    background: var(--color-raised);
+    color: var(--color-ink);
+  }
+  .legal-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px dashed var(--color-reward);
+    border-radius: var(--radius-card);
+    background: color-mix(in srgb, var(--color-reward) 8%, transparent);
+    color: var(--color-ink);
+  }
+  .legal-banner > .size-6 {
+    color: var(--color-reward);
+  }
+  .legal-section {
+    display: grid;
+    gap: 12px;
+  }
+  .legal-section p,
+  .legal-section li {
+    color: var(--color-prose);
+  }
+  .legal-list {
+    display: grid;
+    gap: 8px;
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .legal-placeholder {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border: 1px dashed var(--color-reward);
+    border-radius: var(--radius-control);
+    background: color-mix(in srgb, var(--color-reward) 8%, transparent);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+  }
+  .legal-placeholder-tag {
+    color: var(--color-reward);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .legal-identity {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .legal-identity > div {
+    display: grid;
+    gap: 4px;
+  }
+  @media (min-width: 768px) {
+    .legal-identity > div {
+      grid-template-columns: 13rem minmax(0, 1fr);
+      align-items: baseline;
+    }
+  }
+  .legal-identity dt {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+  }
+  .legal-cards {
+    display: grid;
+    gap: 16px;
+  }
+  @media (min-width: 768px) {
+    .legal-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .legal-status {
+    padding-top: 8px;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-info);
+    font-size: 0.875rem;
+  }
+  .legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+  .legal-table th {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-line);
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-align: left;
+  }
+  .legal-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--color-line);
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    color: var(--color-prose);
+  }
+  .legal-table code {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--color-info);
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 1023.98px) {
+    .legal-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .legal-table,
+    .legal-table tbody,
+    .legal-table tr,
+    .legal-table td {
+      display: block;
+      width: 100%;
+    }
+    .legal-table tr {
+      margin-bottom: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+      background: var(--color-surface);
+    }
+    .legal-table td {
+      display: grid;
+      gap: 4px;
+      padding: 6px 0;
+      border: 0;
+    }
+    .legal-table td::before {
+      content: attr(data-label);
+      color: var(--color-muted);
+      font-size: 0.8125rem;
+    }
+  }
+
+  /* ---------- aide ---------- */
+  .help-search {
+    display: grid;
+    gap: 8px;
+    max-width: 44rem;
+  }
+  .help-topic {
+    display: flex;
+    min-height: 56px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-weight: 500;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+  .help-topic:hover {
+    border-color: var(--color-magic);
+    background: var(--color-raised);
+  }
+
+  /* ---------- contact ---------- */
+  .contact-layout {
+    display: grid;
+    gap: 24px;
+  }
+  @media (min-width: 1024px) {
+    .contact-layout {
+      grid-template-columns: minmax(0, 1fr) 18rem;
+      align-items: start;
+    }
+  }
+  /* champ piège : hors de l'écran (les robots le remplissent, les personnes ne le voient pas) */
+  .hp-field {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+  .support-reply {
+    display: grid;
+    gap: 4px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--color-success);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+  }
+
+  /* ---------- accueil guidé ---------- */
+  .welcome-steps {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .welcome-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+  .welcome-step-number {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .welcome-step.is-done .welcome-step-number {
+    border-color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 16%, transparent);
+    color: var(--color-success);
+  }
+  .welcome-step.is-current {
+    color: var(--color-ink);
+  }
+  .welcome-step.is-current .welcome-step-number {
+    border-color: var(--color-magic);
+    background: var(--color-action);
+    color: var(--color-white);
+  }
+  .welcome-step-label {
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 639.98px) {
+    /* à 390 px : les numéros seulement (le titre de l'étape en cours est écrit dessous) */
+    .welcome-step-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  .welcome-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ---------- page d'accueil : aperçu du studio, témoignages fictifs ---------- */
+  .landing-studio {
+    display: grid;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-panel);
+    background:
+      radial-gradient(500px 240px at 0% 0%, color-mix(in srgb, var(--color-action) 16%, transparent), transparent 60%),
+      var(--color-surface);
+  }
+  .landing-studio-tag {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--color-reward);
+    color: var(--color-canvas);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .landing-studio-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .landing-studio-steps li {
+    padding: 4px 10px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+  }
+  .landing-studio-steps li.is-done {
+    border-color: color-mix(in srgb, var(--color-success) 50%, var(--color-line));
+    color: var(--color-success);
+  }
+  .landing-studio-steps li.is-current {
+    border-color: var(--color-magic);
+    color: var(--color-ink);
+  }
+  .landing-studio-body {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-raised);
+  }
+  .landing-studio-lesson {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+  }
+  .testimonial {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

@@ -1,0 +1,111 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_multiplayer_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_multiplayer_dev (service multiplayer) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 1 migrations appliquées, dernière : 20261123170000) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_multiplayer_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • lobbies — lobbies_capacity : (max_players >= 2) AND (max_players <= 4)
+%% @legende • lobbies — lobbies_status : status IN ('waiting', 'playing', 'closed')
+%% @legende • lobbies — lobbies_title : (char_length(title) >= 3) AND (char_length(title) <= 60)
+%% @legende • lobbies — lobbies_visibility : visibility IN ('open', 'private')
+%% @legende • lobby_invites — lobby_invites_not_self : inviter_id <> invitee_id
+%% @legende • lobby_invites — lobby_invites_status : status IN ('pending', 'accepted', 'declined', 'revoked')
+%% @legende • lobby_links — lobby_links_uses : ((max_uses >= 1) AND (max_uses <= 20)) AND ((uses >= 0) AND (uses <= max_uses))
+%% @legende • lobby_members — lobby_members_connection : connection IN ('online', 'disconnected', 'absent')
+%% @legende • lobby_members — lobby_members_status : status IN ('pending', 'active', 'left', 'kicked', 'declined')
+%% @legende • lobby_messages — lobby_messages_body : (char_length(body) >= 1) AND (char_length(body) <= 500)
+%% @legende • match_events — match_events_seq : seq >= 1
+%% @legende • match_rewards — match_rewards_status : status IN ('pending', 'awarded', 'failed')
+%% @legende • matches — matches_status : status IN ('active', 'won', 'lost', 'aborted')
+erDiagram
+  direction LR
+  lobbies {
+    uuid id PK
+    uuid host_id "NN · ⇢ accounts.users"
+    varchar(255) title "NN"
+    varchar(255) visibility "NN"
+    boolean requires_approval "NN · déf. false"
+    integer max_players "NN"
+    timestamp starts_at
+    varchar(255) status "NN · déf. 'waiting'"
+    uuid current_match_id "⇢ matches"
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  lobby_invites {
+    uuid id PK
+    uuid lobby_id FK, UK "NN · → lobbies.id CASCADE · UQ (lobby_id, invitee_id)"
+    uuid inviter_id "NN · ⇢ accounts.users"
+    uuid invitee_id UK "NN · UQ (lobby_id, invitee_id) · ⇢ accounts.users"
+    varchar(255) status "NN · déf. 'pending'"
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  lobby_links {
+    uuid id PK
+    uuid lobby_id FK "NN · → lobbies.id CASCADE"
+    uuid created_by "NN · ⇢ accounts.users"
+    bytea token_hash UK "NN"
+    timestamp expires_at "NN"
+    integer max_uses "NN"
+    integer uses "NN · déf. 0"
+    timestamp revoked_at
+    timestamp inserted_at "NN"
+  }
+  lobby_members {
+    uuid lobby_id PK, FK "→ lobbies.id CASCADE"
+    uuid user_id PK "⇢ accounts.users"
+    varchar(255) status "NN"
+    boolean ready "NN · déf. false"
+    varchar(255) connection "NN · déf. 'online'"
+    timestamp last_seen_at "NN"
+    timestamp joined_at
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  lobby_messages {
+    uuid id PK
+    uuid lobby_id FK "NN · → lobbies.id CASCADE"
+    uuid user_id "NN · ⇢ accounts.users"
+    text body "NN"
+    timestamp inserted_at "NN"
+  }
+  match_events {
+    uuid match_id PK, FK "→ matches.id CASCADE"
+    integer seq PK
+    varchar(255) type "NN"
+    uuid user_id "⇢ accounts.users"
+    jsonb payload "NN · déf. '{}'"
+    timestamp inserted_at "NN"
+  }
+  match_rewards {
+    uuid id PK
+    uuid match_id FK, UK "NN · → matches.id CASCADE · UQ (match_id, user_id)"
+    uuid user_id UK "NN · UQ (match_id, user_id) · ⇢ accounts.users"
+    integer amount "NN"
+    varchar(255) status "NN · déf. 'pending'"
+    integer attempts "NN · déf. 0"
+    timestamp next_attempt_at "NN"
+    varchar(255) last_error
+    timestamp awarded_at
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  matches {
+    uuid id PK
+    uuid lobby_id FK "NN · → lobbies.id CASCADE"
+    varchar(255) status "NN · déf. 'active'"
+    integer last_seq "NN · déf. 0"
+    timestamp finished_at
+    timestamp inserted_at "NN"
+    timestamp updated_at "NN"
+  }
+  lobbies ||..o{ lobby_invites : "lobby_id"
+  lobbies ||..o{ lobby_links : "lobby_id"
+  lobbies ||--o{ lobby_members : "lobby_id"
+  lobbies ||..o{ lobby_messages : "lobby_id"
+  matches ||--o{ match_events : "match_id"
+  matches ||..o{ match_rewards : "match_id"
+  lobbies ||..o{ matches : "lobby_id"

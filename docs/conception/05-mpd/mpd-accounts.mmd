@@ -1,0 +1,214 @@
+%% FICHIER GÉNÉRÉ par e2e/tools/conception.mjs (mpd) depuis la base ml_accounts_dev — ne pas modifier à la main.
+%% @titre MPD — base ml_accounts_dev (service accounts) : modèle physique relevé dans PostgreSQL
+%% @legende Relevé en lecture seule dans pg_catalog le 2026-11-24 (PostgreSQL 14.17, 7 migrations appliquées, dernière : 20261125090000) par e2e/tools/conception.mjs mpd.
+%% @legende Notation : PK clé primaire · FK clé étrangère · UK colonne d'une contrainte ou d'un index d'unicité complet · NN = NOT NULL · déf. = valeur par défaut · UQ (a, b) = unicité composée · → table.colonne CASCADE | SET NULL | NO ACTION = cible de la clé étrangère et sa règle ON DELETE · ⇢ = référence SANS clé étrangère (autre base, ou colonne qui vise plusieurs tables).
+%% @legende Types : alias PostgreSQL exacts — varchar(n) = character varying(n), timestamp(0) = timestamp(0) without time zone, time(0) = time(0) without time zone.
+%% @legende Liens : uniquement les clés étrangères réelles (trait plein : identifiante, la FK fait partie de la PK ; pointillé : non identifiante). Une référence vers une autre base (⇢ accounts.users…) n'a jamais de clé étrangère : chaque base est séparée ; elle est seulement signalée en commentaire (relevé dans les migrations et le code).
+%% @legende Omis (simplification) : tables techniques oban_jobs, oban_peers, schema_migrations ; index non uniques. Définitions complètes : 05-mpd/ddl/ml_accounts_dev.sql (pg_dump --schema-only).
+%% @legende Contraintes CHECK (transtypages ::text omis pour la lecture) :
+%% @legende • data_exports — data_exports_status : status IN ('pending', 'ready', 'failed')
+%% @legende • incidents — incidents_resolution : (status <> 'resolved') OR ((summary IS NOT NULL) AND (resolved_at IS NOT NULL) AND (resolved_by IS NOT NULL))
+%% @legende • incidents — incidents_severity : severity IN ('low', 'medium', 'high', 'critical')
+%% @legende • incidents — incidents_status : status IN ('open', 'investigating', 'resolved')
+%% @legende • sanction_appeals — sanction_appeals_status : status IN ('open', 'accepted', 'rejected')
+%% @legende • sanctions — sanctions_kind : ((kind = 'warning') AND (ends_at IS NULL)) OR ((kind = 'restriction') AND (ends_at IS NOT NULL))
+%% @legende • support_requests — support_requests_requester : (user_id IS NULL) <> (email IS NULL)
+%% @legende • support_requests — support_requests_status : status IN ('open', 'answered', 'closed')
+%% @legende • support_requests — support_requests_topic : topic IN ('account', 'billing', 'privacy', 'bug', 'other')
+%% @legende • user_tokens — context_must_be_valid : context IN ('reset_password', 'change_email')
+%% @legende • users — role_must_be_valid : role IN ('user', 'moderator', 'admin')
+%% @legende • users — users_onboarding_status : onboarding_status IN ('pending', 'completed', 'skipped')
+%% @legende • users — users_one_avatar : (avatar_crest IS NULL) OR (avatar_image IS NULL)
+%% @legende • users — users_profile_visibility : profile_visibility IN ('public', 'members', 'friends', 'private')
+%% @legende Index uniques partiels ou sur expression :
+%% @legende • sanction_appeals — sanction_appeals_one_open_index : UNIQUE (sanction_id) WHERE status = 'open'
+%% @legende • sanctions — sanctions_ref_index : UNIQUE (ref) WHERE ref IS NOT NULL
+%% @legende • users — users_avatar_image_index : UNIQUE (avatar_image) WHERE avatar_image IS NOT NULL
+%% @legende Déclencheurs :
+%% @legende • audit_entries — audit_entries_no_change (BEFORE DELETE OR UPDATE, audit_entries_append_only()) : refuse toute modification ou suppression (journal en ajout seul)
+erDiagram
+  direction LR
+  audit_entries {
+    bigint id PK "déf. nextval(audit_entries_id_seq)"
+    varchar(255) service "NN"
+    uuid actor_id "NN · ⇢ users (staff)"
+    varchar(255) action "NN"
+    varchar(255) target_type
+    varchar(255) target_id "⇢ objet de n'importe quel service (texte)"
+    text reason
+    jsonb metadata "NN · déf. '{}'"
+    timestamp inserted_at "NN"
+  }
+  confirmation_tokens {
+    uuid id PK
+    uuid user_id FK "NN · → users.id CASCADE"
+    bytea token_hash UK "NN"
+    timestamp(0) inserted_at "NN"
+  }
+  data_exports {
+    uuid id PK
+    uuid user_id FK "NN · → users.id CASCADE"
+    varchar(255) status "NN · déf. 'pending'"
+    jsonb data
+    varchar(255)[] failed_services "NN · déf. ARRAY[]"
+    timestamp(0) completed_at
+    timestamp(0) expires_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  deletion_steps {
+    uuid user_id PK, FK "→ users.id CASCADE"
+    varchar(255) service PK
+    timestamp(0) inserted_at "NN"
+  }
+  incident_updates {
+    uuid id PK
+    uuid incident_id FK "NN · → incidents.id CASCADE"
+    uuid author_id "NN · ⇢ users (staff)"
+    text body "NN"
+    varchar(255) status
+    varchar(255) severity
+    timestamp(0) inserted_at "NN"
+  }
+  incidents {
+    uuid id PK
+    varchar(255) title "NN"
+    varchar(255) severity "NN"
+    varchar(255) status "NN · déf. 'open'"
+    text summary
+    uuid created_by "NN · ⇢ users (staff)"
+    uuid resolved_by "⇢ users (staff)"
+    timestamp(0) resolved_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  login_challenges {
+    uuid id PK
+    uuid user_id FK "NN · → users.id CASCADE"
+    bytea token_hash UK "NN"
+    integer attempts "NN · déf. 0"
+    timestamp(0) inserted_at "NN"
+  }
+  login_failures {
+    bigint id PK "déf. nextval(login_failures_id_seq)"
+    varchar(255) email "NN"
+    timestamp(0) inserted_at "NN"
+  }
+  recovery_codes {
+    uuid id PK
+    uuid user_id FK, UK "NN · → users.id CASCADE · UQ (user_id, code_hash)"
+    bytea code_hash UK "NN · UQ (user_id, code_hash)"
+    timestamp(0) inserted_at "NN"
+  }
+  sanction_appeals {
+    uuid id PK
+    uuid sanction_id FK "NN · → sanctions.id CASCADE · UQ partiel (sanction_id) WHERE status = 'open'"
+    uuid user_id FK "NN · → users.id CASCADE"
+    text body "NN"
+    varchar(255) status "NN · déf. 'open'"
+    uuid decided_by "⇢ users (staff)"
+    text decision_reason
+    timestamp(0) decided_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  sanctions {
+    uuid id PK
+    uuid user_id FK "NN · → users.id CASCADE"
+    varchar(255) kind "NN"
+    text reason "NN"
+    uuid issued_by "NN · ⇢ users (staff)"
+    timestamp(0) ends_at
+    varchar(255) ref "UQ partiel (ref) WHERE ref IS NOT NULL"
+    timestamp(0) lifted_at
+    uuid lifted_by "⇢ users (staff)"
+    text lift_reason
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  sessions {
+    uuid id PK
+    uuid user_id FK "NN · → users.id CASCADE"
+    bytea token_hash UK "NN"
+    timestamp(0) last_used_at "NN"
+    timestamp(0) inserted_at "NN"
+    varchar(200) user_agent
+    varchar(45) ip
+  }
+  support_replies {
+    uuid id PK
+    uuid request_id FK "NN · → support_requests.id CASCADE"
+    uuid author_id "NN · ⇢ users (staff)"
+    text body "NN"
+    varchar(255) email_status "NN"
+    timestamp(0) inserted_at "NN"
+  }
+  support_requests {
+    uuid id PK
+    varchar(255) reference UK "NN"
+    uuid user_id FK "→ users.id CASCADE"
+    varchar(255) email
+    varchar(255) topic "NN"
+    text message "NN"
+    varchar(255) locale "NN · déf. 'en'"
+    varchar(255) status "NN · déf. 'open'"
+    text internal_note
+    timestamp(0) answered_at
+    timestamp(0) closed_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+  }
+  throttle_events {
+    bigint id PK "déf. nextval(throttle_events_id_seq)"
+    varchar(255) key "NN"
+    timestamp(0) inserted_at "NN"
+  }
+  user_tokens {
+    uuid id PK
+    uuid user_id FK "NN · → users.id CASCADE"
+    varchar(255) context "NN"
+    bytea token_hash UK "NN"
+    citext sent_to "NN"
+    timestamp(0) inserted_at "NN"
+  }
+  users {
+    uuid id PK
+    citext email UK "NN"
+    citext username UK "NN"
+    varchar(255) display_name "NN"
+    text bio
+    varchar(255) hashed_password "NN"
+    varchar(255) role "NN · déf. 'user'"
+    timestamp(0) confirmed_at
+    timestamp(0) inserted_at "NN"
+    timestamp(0) updated_at "NN"
+    bytea totp_secret
+    bytea totp_pending_secret
+    bigint totp_last_step
+    timestamp(0) totp_enabled_at
+    timestamp(0) deletion_scheduled_at
+    timestamp(0) deleted_at
+    timestamp(0) restricted_until
+    varchar(255) pronouns
+    varchar(255)[] interests "NN · déf. ARRAY[]"
+    varchar(255) cover
+    varchar(255) profile_visibility "NN · déf. 'members'"
+    varchar(255) avatar_crest
+    varchar(255) avatar_image "UQ partiel (avatar_image) WHERE avatar_image IS NOT NULL"
+    jsonb preferences "NN · déf. '{}'"
+    varchar(255) onboarding_status "NN · déf. 'pending'"
+    timestamp(0) onboarding_at
+  }
+  users ||..o{ confirmation_tokens : "user_id"
+  users ||..o{ data_exports : "user_id"
+  users ||--o{ deletion_steps : "user_id"
+  incidents ||..o{ incident_updates : "incident_id"
+  users ||..o{ login_challenges : "user_id"
+  users ||..o{ recovery_codes : "user_id"
+  sanctions ||..o{ sanction_appeals : "sanction_id"
+  users ||..o{ sanction_appeals : "user_id"
+  users ||..o{ sanctions : "user_id"
+  users ||..o{ sessions : "user_id"
+  support_requests ||..o{ support_replies : "request_id"
+  users |o..o{ support_requests : "user_id"
+  users ||..o{ user_tokens : "user_id"

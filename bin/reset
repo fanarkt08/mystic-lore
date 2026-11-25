@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Remet les bases de développement dans l'état exact des seeds de démo (supprime toutes les données créées depuis).
+# Arrête les services, supprime puis recrée les 8 bases. Ne touche pas aux bases de test.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export DB_USER="${DB_USER:-$(whoami)}" DB_PASSWORD="${DB_PASSWORD:-}"
+"$ROOT/bin/stop" || true
+# pièces jointes déposées en dev (avant les seeds de social, qui y écrivent l'image de démonstration du groupe)
+rm -rf "$ROOT/src/social/priv/storage/attachments"
+for s in accounts learning billing social multiplayer community studio notifications; do
+  echo "==> $s"
+  (cd "$ROOT/src/$s" && mix ecto.drop --force-drop && mix ecto.create && mix ecto.migrate && mix run priv/repo/seeds.exs) > /dev/null
+done
+# avatars téléversés en dev (référencés par la base accounts qui vient d'être recréée)
+rm -rf "$ROOT/src/accounts/priv/storage/avatars"
+echo "Bases de démo réinitialisées. Relancez : bin/dev"

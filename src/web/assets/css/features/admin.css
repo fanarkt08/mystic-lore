@@ -1,0 +1,204 @@
+/* Administration & modération : coque sombre distincte (rail), tuiles d'indicateurs, tableaux → cartes sur mobile. */
+@layer components {
+  .admin-shell {
+    min-height: 100dvh;
+  }
+  /* rail sombre : barre horizontale défilante sur mobile/tablette, colonne fixe à partir de 1024 px */
+  .admin-rail {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-line);
+    background: var(--color-sunken);
+  }
+  .admin-rail-brand {
+    display: none;
+  }
+  .admin-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .admin-link {
+    display: inline-flex;
+    min-height: 46px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+    padding-inline: 12px;
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .admin-link:hover {
+    background: var(--color-raised);
+    color: var(--color-ink);
+  }
+  .admin-link[aria-current="page"] {
+    background: color-mix(in srgb, var(--color-info) 12%, transparent);
+    box-shadow: inset 0 -3px 0 var(--color-info);
+    color: var(--color-ink);
+  }
+  .admin-main:focus {
+    outline: none;
+  }
+  .admin-page {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding: 24px 16px 64px;
+  }
+  @media (min-width: 1024px) {
+    .admin-rail {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 248px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 24px;
+      overflow-y: auto;
+      padding: 24px 16px;
+      border-right: 1px solid var(--color-line);
+      border-bottom: 0;
+    }
+    .admin-rail-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-inline: 8px;
+    }
+    .admin-nav {
+      flex: 1;
+      flex-direction: column;
+    }
+    .admin-link[aria-current="page"] {
+      box-shadow: inset 3px 0 0 var(--color-info);
+    }
+    .admin-exit {
+      border-top: 1px solid var(--color-line);
+      border-radius: 0;
+      padding-top: 12px;
+    }
+    .admin-main {
+      padding-left: 248px;
+    }
+    .admin-page {
+      padding: 32px 32px 64px;
+    }
+  }
+
+  /* indicateurs : une tuile par service, jamais de chiffre inventé */
+  .metric-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  }
+  .metric-list {
+    display: grid;
+    gap: 12px;
+  }
+  .metric-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: var(--color-ink);
+  }
+  .metric-missing {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--color-muted);
+  }
+
+  /* tableaux ; < 1280 px (rail de 248 px compris) : chaque ligne devient une carte, chaque cellule porte son libellé (data-label) */
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+  .admin-table th {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-line);
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-align: left;
+  }
+  .admin-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--color-line);
+    vertical-align: top;
+    /* « anywhere » (et non « break-word ») compte aussi dans la largeur minimale du tableau : un identifiant ou un code
+       long passe à la ligne au lieu d'élargir la page (espacement du texte agrandi, 1.4.12) */
+    overflow-wrap: anywhere;
+  }
+  .admin-table .nowrap {
+    white-space: nowrap;
+  }
+  @media (max-width: 1279.98px) {
+    .admin-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .admin-table,
+    .admin-table tbody,
+    .admin-table tr,
+    .admin-table td {
+      display: block;
+      width: 100%;
+    }
+    .admin-table tr {
+      margin-bottom: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--color-line);
+      border-radius: var(--radius-card);
+      background: var(--color-surface);
+    }
+    .admin-table td {
+      display: grid;
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      justify-items: start;
+      gap: 8px;
+      padding: 6px 0;
+      border: 0;
+      overflow-wrap: anywhere;
+    }
+    .admin-table td::before {
+      content: attr(data-label);
+      color: var(--color-muted);
+      font-size: 0.8125rem;
+    }
+  }
+
+  .evidence {
+    padding: 16px;
+    border: 1px dashed var(--color-danger);
+    border-radius: var(--radius-card);
+    background: color-mix(in srgb, var(--color-danger) 6%, transparent);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .timeline {
+    display: grid;
+    gap: 12px;
+    padding-left: 16px;
+    border-left: 2px solid var(--color-line);
+  }
+
+  /* messagerie : message retiré par la modération */
+  .bubble-removed {
+    font-style: italic;
+    color: var(--color-muted);
+  }
+}

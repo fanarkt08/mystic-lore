@@ -1,0 +1,284 @@
+/* Formats de leçon : vidéo, simulation, mini-jeux (MysticWeb.LessonFormats). Contrôles ≥ 46 px, état jamais
+   porté par la seule couleur (numéros, textes, motifs de traits), aucun défilement horizontal de la page. */
+@layer components {
+  /* ---------- vidéo ---------- */
+  .lesson-video-frame {
+    overflow: hidden;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: #000;
+  }
+  .lesson-video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+  }
+  /* focus visible : les commandes du lecteur (dessinées par le navigateur, dans un cadre qui coupe tout débord) ont
+     le focus → anneau sur le cadre */
+  .lesson-video-frame:focus-within {
+    outline: 2px solid var(--color-info);
+    outline-offset: 2px;
+  }
+  .lesson-meter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    color: var(--color-muted);
+  }
+  .lesson-transcript {
+    padding: 16px;
+    border-left: 3px solid var(--color-magic);
+    background: var(--color-surface);
+    border-radius: var(--radius-control);
+  }
+
+  /* ---------- simulation ---------- */
+  .sim-params {
+    display: grid;
+    gap: 16px;
+  }
+  @media (min-width: 768px) {
+    .sim-params {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .sim-plot {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1;
+    margin-inline: auto;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--color-action) 15%, var(--color-canvas)), var(--color-canvas) 70%);
+  }
+  .sim-plot-wide {
+    max-width: 640px;
+    aspect-ratio: 16 / 9;
+  }
+  .sim-line {
+    fill: none;
+    stroke: var(--color-info);
+    stroke-width: 0.8;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: round;
+  }
+  .sim-plot .sim-line {
+    stroke-width: 2;
+  }
+  .sim-line-1 {
+    stroke: var(--color-reward);
+    stroke-dasharray: 6 4;
+  }
+  .sim-line-2 {
+    stroke: var(--color-success);
+    stroke-dasharray: 2 3;
+  }
+  .sim-line-3 {
+    stroke: var(--color-magic);
+    stroke-dasharray: 10 3 2 3;
+  }
+  .sim-line-4,
+  .sim-line-5 {
+    stroke: var(--color-danger);
+    stroke-dasharray: 1 2;
+  }
+  .sim-star {
+    fill: var(--color-reward);
+  }
+  .sim-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+  .sim-key::before {
+    content: "";
+    display: inline-block;
+    width: 24px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border-top: 3px solid var(--color-info);
+  }
+  .sim-key-1::before {
+    border-top: 3px dashed var(--color-reward);
+  }
+  .sim-key-2::before {
+    border-top: 3px dotted var(--color-success);
+  }
+  .sim-key-3::before {
+    border-top: 3px double var(--color-magic);
+  }
+  .sim-metrics {
+    display: grid;
+    gap: 8px 16px;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  }
+  .sim-metrics div {
+    padding: 8px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+  }
+  .sim-metrics dt {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+  }
+  .sim-metrics dd {
+    font-weight: 600;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+  .sim-table-scroll {
+    max-height: 22rem;
+    overflow: auto;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+  }
+  .sim-table-scroll:focus-visible {
+    outline: 2px solid var(--color-info);
+    outline-offset: 2px;
+  }
+  .sim-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .sim-table caption {
+    padding: 8px 12px;
+    text-align: left;
+    font-family: var(--font-sans);
+    color: var(--color-muted);
+  }
+  .sim-table th {
+    position: sticky;
+    top: 0;
+    padding: 8px 12px;
+    background: var(--color-raised);
+    color: var(--color-ink);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .sim-table td {
+    padding: 4px 12px;
+    border-top: 1px solid var(--color-line);
+    text-align: right;
+  }
+
+  /* ---------- mini-jeux ---------- */
+  .sequence-list {
+    display: grid;
+    gap: 8px;
+  }
+  .sequence-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 4px 4px 4px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+  }
+  .sequence-item:focus-within {
+    border-color: var(--color-magic);
+  }
+  .sequence-position {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+  /* `.btn` (déclaré après, avec un padding plus large dès 768 px) ne doit pas écraser le bouton icône */
+  .btn.btn-icon {
+    width: 46px;
+    padding: 0;
+  }
+  .star-map {
+    display: block;
+    width: 100%;
+    max-width: 520px;
+    aspect-ratio: 1;
+    margin-inline: auto;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--color-action) 15%, var(--color-canvas)), var(--color-canvas) 75%);
+  }
+  .star-link {
+    stroke: var(--color-magic);
+    stroke-width: 0.8;
+    stroke-linecap: round;
+  }
+  .star-dot {
+    fill: var(--color-ink);
+  }
+  .star-dot-picked {
+    fill: var(--color-reward);
+    stroke: var(--color-ink);
+    stroke-width: 0.5;
+  }
+  .star-name {
+    font-size: 3px;
+    fill: var(--color-muted);
+  }
+  .star-place {
+    font-size: 2.6px;
+    font-weight: 700;
+    fill: var(--color-reward);
+  }
+  /* pastilles sous le nom et le rang : le texte ne passe jamais sur un segment du chemin */
+  .star-name-bg {
+    fill: var(--color-canvas);
+  }
+  .star-place-bg {
+    fill: var(--color-canvas);
+    stroke: var(--color-line-strong);
+    stroke-width: 0.2;
+  }
+  .star-list {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+  .star-button {
+    display: flex;
+    width: 100%;
+    min-height: 56px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    text-align: left;
+    cursor: pointer;
+  }
+  .star-button:hover {
+    border-color: var(--color-line-strong);
+  }
+  .star-button:focus-visible {
+    outline: 2px solid var(--color-info);
+    outline-offset: 2px;
+  }
+  .star-order {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-reward);
+  }
+  .star-order::before {
+    content: "★ ";
+  }
+}
