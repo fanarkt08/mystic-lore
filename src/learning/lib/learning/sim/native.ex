@@ -27,7 +27,12 @@ defmodule MlLearning.Sim.Native do
   end
 
   defp open(path) do
-    {:ok, Port.open({:spawn_executable, path}, [:binary, :exit_status, :use_stdio, :hide])}
+    env =
+      for {name, value} <- child_env(),
+          do: {to_charlist(name), if(value, do: to_charlist(value), else: false)}
+
+    {:ok,
+     Port.open({:spawn_executable, path}, [:binary, :exit_status, :use_stdio, :hide, env: env])}
   rescue
     _ -> {:error, :absent}
   end
@@ -45,8 +50,13 @@ defmodule MlLearning.Sim.Native do
       Port.command(port, input)
       collect(port, os_pid, [], 0, deadline)
     rescue
-      # l'exécutable s'est terminé avant de lire l'entrée
-      ArgumentError -> {:error, {:exit, :closed}}
+      # L'exécutable s'est terminé avant de lire l'entrée : on attend son code de sortie s'il arrive à temps.
+      ArgumentError ->
+        receive do
+          {^port, {:exit_status, status}} -> {:error, {:exit, status}}
+        after
+          max(deadline - System.monotonic_time(:millisecond), 0) -> {:error, {:exit, :closed}}
+        end
     end
   end
 
@@ -71,7 +81,11 @@ defmodule MlLearning.Sim.Native do
 
   defp kill(port, os_pid, reason) do
     if os_pid,
-      do: System.cmd("kill", ["-KILL", Integer.to_string(os_pid)], stderr_to_stdout: true)
+      do:
+        System.cmd("kill", ["-KILL", Integer.to_string(os_pid)],
+          stderr_to_stdout: true,
+          env: child_env()
+        )
 
     Port.close(port)
     flush(port)
@@ -79,6 +93,13 @@ defmodule MlLearning.Sim.Native do
   catch
     _, _ -> {:error, reason}
   end
+
+  # Le moteur et `kill` ne reçoivent aucune variable du serveur, secrets compris : seulement un PATH minimal.
+  defp child_env,
+    do: [
+      {"PATH", "/usr/bin:/bin"}
+      | for({name, _} <- System.get_env(), name != "PATH", do: {name, nil})
+    ]
 
   defp flush(port) do
     receive do
