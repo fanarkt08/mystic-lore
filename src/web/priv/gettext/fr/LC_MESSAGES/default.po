@@ -11938,7 +11938,7 @@ msgstr "Laissez ce champ vide (contrôle anti-spam)"
 #: lib/web_web/components/layouts.ex:139
 #, elixir-autogen, elixir-format
 msgid "Legal"
-msgstr "Juridique"
+msgstr "Mentions légales"
 
 #: lib/web_web/components/legal_components.ex:105
 #, elixir-autogen, elixir-format
